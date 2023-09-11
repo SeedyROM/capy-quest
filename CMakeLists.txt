@@ -11,7 +11,7 @@ include_directories(src/)
 set(CMAKE_BUILD_TYPE Debug)
 
 # Set compiler flags
-set(CMAKE_C_FLAGS "-Wall -g -O0")
+set(CMAKE_C_FLAGS "-fsanitize=address -Wall  -Wextra -pedantic -g -O0")
 
 find_package(GLFW3 REQUIRED)
 find_package(OpenGL REQUIRED)

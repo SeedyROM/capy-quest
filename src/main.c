@@ -29,11 +29,11 @@ int main(void)
         } sprite;
         sprite.offset = 0;
         sprite.data = ReadFileBytes(arena, &path);
-        printf("File size: %zu\n", sprite.data->size);
+        printf("File size: %zu\n", sprite.data->len);
 
         // NOTE(SeedyROM): Should this be checked?
         u32 spriteSize = ByteArrayReadU32(sprite.data, &sprite.offset);
-        assert(spriteSize == sprite.data->size);
+        assert(spriteSize == sprite.data->len);
 
         // Check the magic number
         u16 magic = ByteArrayReadU16(sprite.data, &sprite.offset);
@@ -49,6 +49,7 @@ int main(void)
         printf("Width: %u\n", width);
         printf("Height: %u\n", height);
     };
+    ArenaFree(scratch);
 
     GLFWwindow *window;
 
@@ -70,6 +71,10 @@ int main(void)
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
     {
+        // Close if q or escape is pressed
+        if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+            glfwSetWindowShouldClose(window, GLFW_TRUE);
+
         /* Render here */
         glClear(GL_COLOR_BUFFER_BIT);
 

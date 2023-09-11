@@ -27,7 +27,7 @@ String *ReadFileString(Arena *arena, String *path)
     result->ptr = ArenaPushArray(arena, size + 1, char);
 
     // Read the file
-    int bytesRead = fread(result->ptr, sizeof(char), size, file);
+    usize bytesRead = fread(result->ptr, sizeof(char), size, file);
     if (bytesRead != size)
     {
         printf("Failed to read file: %s\n", path->ptr);
@@ -46,6 +46,7 @@ ByteArray *ReadFileBytes(Arena *arena, String *path)
     if (!file)
     {
         printf("Failed to open file: %s\n", path->ptr);
+        printf("Reason: %s\n", strerror(errno));
         exit(1);
     }
 
@@ -54,11 +55,11 @@ ByteArray *ReadFileBytes(Arena *arena, String *path)
 
     // Allocate space for the file
     ByteArray *result = ArenaPushStruct(arena, ByteArray);
-    result->size = size;
+    result->len = size;
     result->ptr = ArenaPushArray(arena, size, u8);
 
     // Read the file
-    int bytesRead = fread(result->ptr, sizeof(u8), size, file);
+    usize bytesRead = fread(result->ptr, sizeof(u8), size, file);
     if (bytesRead != size)
     {
         printf("Failed to read file: %s\n", path->ptr);
@@ -72,7 +73,7 @@ ByteArray *ReadFileBytes(Arena *arena, String *path)
 
 void *ByteArrayReadArray(ByteArray *array, usize size, usize *offset, usize count)
 {
-    if (*offset + size * count > array->size)
+    if (*offset + size * count > array->len)
     {
         printf("ByteArrayReadArray: Out of bounds\n");
         exit(1);

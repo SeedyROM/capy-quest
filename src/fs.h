@@ -12,7 +12,7 @@
 
 typedef struct ByteArray
 {
-    usize size;
+    usize len;
     u8 *ptr;
 } ByteArray;
 
