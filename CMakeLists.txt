@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.18)
 
-project(jumpcity)
+project(capy-quest)
 
 set(CMAKE_C_STANDARD 11)
 
