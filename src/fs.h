@@ -22,6 +22,10 @@ ByteArray *ReadFileBytes(Arena *arena, String *path);
 
 void *ByteArrayReadArray(ByteArray *array, usize size, usize *offset, usize count);
 
+// ========================================================================================
+// Single byte read macros
+// ========================================================================================
+
 #define ByteArrayRead(array, type, offset, count) (type *)ByteArrayReadArray(array, sizeof(type) * count, offset, count)
 
 #define ByteArrayReadU8(array, offset) *ByteArrayRead(array, u8, offset, 1)
@@ -36,3 +40,20 @@ void *ByteArrayReadArray(ByteArray *array, usize size, usize *offset, usize coun
 
 #define ByteArrayReadF32(array, offset) *ByteArrayRead(array, f32, offset, 1)
 #define ByteArrayReadF64(array, offset) *ByteArrayRead(array, f64, offset, 1)
+
+// ========================================================================================
+// Array read macros
+// ========================================================================================
+
+#define ByteArrayReadArrayU8(array, offset, count) ByteArrayRead(array, u8, offset, count)
+#define ByteArrayReadArrayU16(array, offset, count) ByteArrayRead(array, u16, offset, count)
+#define ByteArrayReadArrayU32(array, offset, count) ByteArrayRead(array, u32, offset, count)
+#define ByteArrayReadArrayU64(array, offset, count) ByteArrayRead(array, u64, offset, count)
+
+#define ByteArrayReadArrayI8(array, offset, count) ByteArrayRead(array, i8, offset, count)
+#define ByteArrayReadArrayI16(array, offset, count) ByteArrayRead(array, i16, offset, count)
+#define ByteArrayReadArrayI32(array, offset, count) ByteArrayRead(array, i32, offset, count)
+#define ByteArrayReadArrayI64(array, offset, count) ByteArrayRead(array, i64, offset, count)
+
+#define ByteArrayReadArrayF32(array, offset, count) ByteArrayRead(array, f32, offset, count)
+#define ByteArrayReadArrayF64(array, offset, count) ByteArrayRead(array, f64, offset, count)
