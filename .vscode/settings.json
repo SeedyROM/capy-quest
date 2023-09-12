@@ -15,6 +15,7 @@
     "unordered_map": "c",
     "chrono": "c",
     "algorithm": "c",
-    "format": "c"
+    "format": "c",
+    "cstddef": "c"
   }
 }

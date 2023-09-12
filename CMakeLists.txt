@@ -11,10 +11,11 @@ include_directories(src/)
 set(CMAKE_BUILD_TYPE Debug)
 
 # Set compiler flags
-set(CMAKE_C_FLAGS "-fsanitize=address -Wall  -Wextra -pedantic -g -O0")
+set(CMAKE_C_FLAGS "-Wall  -Wextra -pedantic -g -O0")
 
 find_package(GLFW3 REQUIRED)
 find_package(OpenGL REQUIRED)
+find_package(ZLIB REQUIRED)
 
 add_executable(${PROJECT_NAME} ${SOURCES})
-target_link_libraries(${PROJECT_NAME} glfw OpenGL::GL)
+target_link_libraries(${PROJECT_NAME} glfw OpenGL::GL ZLIB::ZLIB)
