@@ -41,7 +41,6 @@ int main(void)
     Arena *arena = ArenaAlloc(512 * Megabyte);
 
     Arena *spriteDataArena = ArenaAlloc(16 * Megabyte);
-    Arena *spriteFrameArena = ArenaAlloc(32 * Megabyte);
     tempMemoryBlock(spriteDataArena)
     {
         // NOTE(SeedyROM): this is just an excuse to test the StringBuilder
@@ -181,7 +180,20 @@ int main(void)
                         printf("Size: (%u, %u)\n", celWidth, celHeight);
 
                         u8 *compressedData = ByteArrayReadArrayU8(spriteParser.data, &spriteParser.offset, celWidth * celHeight);
-                        u32 *decompressedData = ArenaPushArray(spriteFrameArena, spriteWidth * spriteHeight, u32);
+
+                        printf("\nCompressed Data:\n");
+                        // Print the compressed data
+                        for (u32 i = 0; i < celWidth * celHeight; i++)
+                        {
+                            printf("%02X ", compressedData[i]);
+                            if ((i + 1) % celWidth == 0)
+                            {
+                                printf("\n");
+                            }
+                        }
+                        printf("\n");
+
+                        u32 *decompressedData = ArenaPushArray(spriteDataArena, spriteWidth * spriteHeight, u32);
 
                         // Set up zlib's inflate stream
                         z_stream stream;
@@ -202,7 +214,7 @@ int main(void)
                         stream.avail_in = celWidth * celHeight;
                         stream.next_in = compressedData;
 
-                        stream.avail_out = spriteWidth * spriteHeight;
+                        stream.avail_out = spriteWidth * spriteHeight * 8;
                         stream.next_out = decompressedData;
 
                         // Perform decompression
@@ -216,15 +228,17 @@ int main(void)
                         // Clean up the inflate stream
                         inflateEnd(&stream);
 
+                        printf("\nDecompressed Data:\n");
                         // Print the decompressed data
                         for (u32 i = 0; i < spriteWidth * spriteHeight; i++)
                         {
-                            printf("%02X ", decompressedData[i]);
+                            printf("%8X ", decompressedData[i]);
                             if ((i + 1) % spriteWidth == 0)
                             {
                                 printf("\n");
                             }
                         }
+                        printf("\n");
                     };
                     break;
 
@@ -244,6 +258,7 @@ int main(void)
                 };
                 }
 
+                // Skip the rest of the chunk plus the chunk headers...
                 spriteParser.offset += chunkSize - 6;
             } while (chunksProcessed++ < numChunks - 1);
         } while (framesProcessed++ < numFrames - 1);
