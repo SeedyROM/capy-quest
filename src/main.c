@@ -101,8 +101,7 @@ int main(void)
             printf("Frame %d duration: %u\n", framesProcessed, frameDuration);
 
             // Ignore these next 2 bytes...
-            u16 nothing = ByteArrayReadU16(spriteParser.data, &spriteParser.offset);
-            assert(nothing == 0);
+            spriteParser.offset += 2;
 
             // New bigger chunk count
             u32 newNumChunks = ByteArrayReadU32(spriteParser.data, &spriteParser.offset);
