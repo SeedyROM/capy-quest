@@ -73,7 +73,7 @@ ByteArray *ReadFileBytes(Arena *arena, String *path)
 
 void *ByteArrayReadArray(ByteArray *array, usize size, usize *offset, usize count)
 {
-    if (*offset + size * count > array->len)
+    if (*offset + (size * count) > array->len)
     {
         printf("ByteArrayReadArray: Out of bounds\n");
         exit(1);

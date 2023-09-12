@@ -26,7 +26,7 @@ void *ByteArrayReadArray(ByteArray *array, usize size, usize *offset, usize coun
 // Single byte read macros
 // ========================================================================================
 
-#define ByteArrayRead(array, type, offset, count) (type *)ByteArrayReadArray(array, sizeof(type) * count, offset, count)
+#define ByteArrayRead(array, type, offset, count) (type *)ByteArrayReadArray(array, sizeof(type), offset, count)
 
 #define ByteArrayReadU8(array, offset) *ByteArrayRead(array, u8, offset, 1)
 #define ByteArrayReadU16(array, offset) *ByteArrayRead(array, u16, offset, 1)
