@@ -180,13 +180,16 @@ int main(void)
 
                         u16 celWidth = ByteArrayReadU16(spriteParser.data, &spriteParser.offset);
                         u16 celHeight = ByteArrayReadU16(spriteParser.data, &spriteParser.offset);
-                        printf("Size: (%u, %u, %u)\n", celWidth, celHeight, celWidth * celHeight);
+                        printf("Size: (%u, %u) = %u\n", celWidth, celHeight, celWidth * celHeight);
 
-                        u8 *compressedData = ByteArrayReadArrayU8(spriteParser.data, &spriteParser.offset, celWidth * celHeight);
+                        // WTF is this?
+                        // It's the CelHeader size...
+                        usize compressedSize = chunkSize - 26;
+                        u8 *compressedData = ByteArrayReadArrayU8(spriteParser.data, &spriteParser.offset, compressedSize);
 
                         printf("\nCompressed Data (Blob):\n");
                         // Print the compressed data
-                        for (u32 i = 0; i < celWidth * celHeight; i++)
+                        for (u32 i = 0; i < compressedSize; i++)
                         {
                             printf("0x%02X ", compressedData[i]);
                             if ((i + 1) % celWidth == 0)
@@ -214,7 +217,7 @@ int main(void)
                             exit(EXIT_FAILURE);
                         }
 
-                        stream.avail_in = celWidth * celHeight;
+                        stream.avail_in = compressedSize;
                         stream.next_in = compressedData;
 
                         stream.avail_out = celWidth * celHeight * sizeof(u32);
