@@ -15,7 +15,7 @@ String *ReadFileString(Arena *arena, String *path)
     if (!file)
     {
         printf("Failed to open file: %s\n", path->ptr);
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 
     // Get the size of the file
@@ -31,7 +31,7 @@ String *ReadFileString(Arena *arena, String *path)
     if (bytesRead != size)
     {
         printf("Failed to read file: %s\n", path->ptr);
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 
     // Null terminate the string
@@ -47,7 +47,7 @@ ByteArray *ReadFileBytes(Arena *arena, String *path)
     {
         printf("Failed to open file: %s\n", path->ptr);
         printf("Reason: %s\n", strerror(errno));
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 
     // Get the size of the file
@@ -64,7 +64,7 @@ ByteArray *ReadFileBytes(Arena *arena, String *path)
     {
         printf("Failed to read file: %s\n", path->ptr);
         printf("Reason: %s\n", strerror(errno));
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 
     fclose(file);
@@ -76,7 +76,7 @@ void *ByteArrayReadArray(ByteArray *array, usize size, usize *offset, usize coun
     if (*offset + (size * count) > array->len)
     {
         printf("ByteArrayReadArray: Out of bounds\n");
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 
     void *result = array->ptr + *offset;

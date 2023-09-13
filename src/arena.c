@@ -22,7 +22,7 @@ void *ArenaPush(Arena *arena, usize size)
     if (arena->used + size > arena->size)
     {
         printf("Arena overflow\n");
-        exit(1);
+        exit(EXIT_FAILURE);
     }
     void *result = (u8 *)arena->base + arena->used;
     arena->used += size;
@@ -41,7 +41,7 @@ void ArenaPop(Arena *arena, usize size)
     if (arena->used < size)
     {
         printf("Arena underflow\n");
-        exit(1);
+        exit(EXIT_FAILURE);
     }
     arena->used -= size;
 }
@@ -56,7 +56,7 @@ void ArenaSetPositionBack(Arena *arena, usize position)
     if (position > arena->used)
     {
         printf("Arena underflow\n");
-        exit(1);
+        exit(EXIT_FAILURE);
     }
     arena->used = position;
 }

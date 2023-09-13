@@ -94,6 +94,7 @@ int main(void)
 
             // Old chunk count
             u16 oldNumChunks = ByteArrayReadU16(spriteParser.data, &spriteParser.offset);
+            (void)oldNumChunks;
 
             // Frame duration in milliseconds
             u16 frameDuration = ByteArrayReadU16(spriteParser.data, &spriteParser.offset);
@@ -132,9 +133,9 @@ int main(void)
                     u16 layerIndex = ByteArrayReadU16(spriteParser.data, &spriteParser.offset);
                     printf("Layer index: %u\n", layerIndex);
 
-                    u16 x = ByteArrayReadU16(spriteParser.data, &spriteParser.offset);
-                    u16 y = ByteArrayReadU16(spriteParser.data, &spriteParser.offset);
-                    printf("Position: (%u, %u)\n", x, y);
+                    u16 positionX = ByteArrayReadU16(spriteParser.data, &spriteParser.offset);
+                    u16 positionY = ByteArrayReadU16(spriteParser.data, &spriteParser.offset);
+                    printf("Position: (%u, %u)\n", positionX, positionY);
 
                     u8 opacity = ByteArrayReadU8(spriteParser.data, &spriteParser.offset);
                     printf("Opacity: %u\n", opacity);
@@ -143,11 +144,12 @@ int main(void)
                     printf("Cel type: %u\n", celType);
 
                     i16 zIndex = ByteArrayReadI16(spriteParser.data, &spriteParser.offset);
+                    printf("Z-index: %d\n", zIndex);
 
                     // Skip the next 5 bytes from the FUTURE...
                     spriteParser.offset += 5;
 
-                    u8 *pixels = NULL;
+                    u32 *pixels = NULL;
                     switch (celType)
                     {
                     case AsepriteCelType_RawCel:
@@ -158,7 +160,8 @@ int main(void)
                         u16 celHeight = ByteArrayReadU16(spriteParser.data, &spriteParser.offset);
                         printf("Size: (%u, %u)\n", celWidth, celHeight);
 
-                        u8 *pixels = ByteArrayReadArrayU8(spriteParser.data, &spriteParser.offset, celWidth * celHeight);
+                        pixels = ByteArrayReadArrayU32(spriteParser.data, &spriteParser.offset, celWidth * celHeight);
+                        (void)pixels;
                     };
                     break;
 
@@ -173,19 +176,19 @@ int main(void)
 
                     case AsepriteCelType_CompressedImage:
                     {
-                        printf("Processing CompressedImage\n");
+                        printf("\nProcessing CompressedImage\n");
 
                         u16 celWidth = ByteArrayReadU16(spriteParser.data, &spriteParser.offset);
                         u16 celHeight = ByteArrayReadU16(spriteParser.data, &spriteParser.offset);
-                        printf("Size: (%u, %u)\n", celWidth, celHeight);
+                        printf("Size: (%u, %u, %u)\n", celWidth, celHeight, celWidth * celHeight);
 
                         u8 *compressedData = ByteArrayReadArrayU8(spriteParser.data, &spriteParser.offset, celWidth * celHeight);
 
-                        printf("\nCompressed Data:\n");
+                        printf("\nCompressed Data (Blob):\n");
                         // Print the compressed data
                         for (u32 i = 0; i < celWidth * celHeight; i++)
                         {
-                            printf("%02X ", compressedData[i]);
+                            printf("0x%02X ", compressedData[i]);
                             if ((i + 1) % celWidth == 0)
                             {
                                 printf("\n");
@@ -193,7 +196,7 @@ int main(void)
                         }
                         printf("\n");
 
-                        u32 *decompressedData = ArenaPushArray(spriteDataArena, spriteWidth * spriteHeight, u32);
+                        pixels = ArenaPushArray(spriteDataArena, celWidth * celHeight, u32);
 
                         // Set up zlib's inflate stream
                         z_stream stream;
@@ -207,33 +210,46 @@ int main(void)
                         int ret = inflateInit(&stream);
                         if (ret != Z_OK)
                         {
-                            fprintf(stderr, "inflateInit failed: %s\n", zError(ret));
+                            fprintf(stderr, "gzip inflateInit failed: %s\n", zError(ret));
                             exit(EXIT_FAILURE);
                         }
 
                         stream.avail_in = celWidth * celHeight;
                         stream.next_in = compressedData;
 
-                        stream.avail_out = spriteWidth * spriteHeight * 8;
-                        stream.next_out = decompressedData;
+                        stream.avail_out = celWidth * celHeight * sizeof(u32);
+                        stream.next_out = (unsigned char *)pixels;
 
                         // Perform decompression
                         ret = inflate(&stream, Z_FINISH);
                         if (ret != Z_STREAM_END)
                         {
-                            fprintf(stderr, "inflate failed: %s\n", zError(ret));
+                            fprintf(stderr, "gzip inflate failed: %s\n", zError(ret));
                             exit(EXIT_FAILURE);
                         }
 
                         // Clean up the inflate stream
                         inflateEnd(&stream);
 
-                        printf("\nDecompressed Data:\n");
-                        // Print the decompressed data
-                        for (u32 i = 0; i < spriteWidth * spriteHeight; i++)
+                        printf("Decompressed Data (Pixels):\n\n");
+                        // Print the decompressed data.
+                        for (u32 i = 0; i < celWidth * celHeight; i++)
                         {
-                            printf("%8X ", decompressedData[i]);
-                            if ((i + 1) % spriteWidth == 0)
+                            u8 a, r, g, b;
+                            a = pixels[i] >> 24 & 0xFF;
+                            r = pixels[i] & 0xFF;
+                            g = pixels[i] >> 8 & 0xFF;
+                            b = pixels[i] >> 16 & 0xFF;
+
+                            if (pixels[i] == 0)
+                            {
+                                printf("  ");
+                            }
+                            else
+                            {
+                                printf("\033[38;2;%d;%d;%dm██\033[0;00m", r, g, b);
+                            }
+                            if ((i + 1) % celWidth == 0)
                             {
                                 printf("\n");
                             }
@@ -244,7 +260,7 @@ int main(void)
 
                     case AespriteCelType_CompressedTileMap:
                     {
-                        printf("CompressedTimeMap not supported!!!\n");
+                        printf("CompressedTileMap not supported!!!\n");
                         exit(1);
                     };
                     break;
@@ -254,12 +270,12 @@ int main(void)
 
                 default:
                 {
+                    // Skip the rest of the chunk plus the chunk headers...
                     printf("Skipping chunk of type %04X\n", chunkType);
+                    spriteParser.offset += chunkSize - 6;
                 };
                 }
 
-                // Skip the rest of the chunk plus the chunk headers...
-                spriteParser.offset += chunkSize - 6;
             } while (chunksProcessed++ < numChunks - 1);
         } while (framesProcessed++ < numFrames - 1);
     };
