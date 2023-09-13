@@ -10,15 +10,15 @@ static const u32 AsepriteFrameMagic = 0xF1FA;
 
 typedef enum
 {
-    AsepriteChunkType_LayerChunk = 0x2004,
-    AsepriteChunkType_CelChunk = 0x2005,
-    AsepriteChunkType_CelExtraChunk = 0x2006,
-    AsepriteChunkType_ColorProfileChunk = 0x2007,
-    AsepriteChunkType_MaskChunk = 0x2016,
-    AsepriteChunkType_PathChunk = 0x2017,
-    AsepriteChunkType_FrameTagsChunk = 0x2018,
-    AsepriteChunkType_PaletteChunk = 0x2019,
-    AsepriteChunkType_UserDataChunk = 0x2020,
+    AsepriteChunkType_Layer = 0x2004,
+    AsepriteChunkType_Cel = 0x2005,
+    AsepriteChunkType_CelExtra = 0x2006,
+    AsepriteChunkType_ColorProfile = 0x2007,
+    AsepriteChunkType_Mask = 0x2016,
+    AsepriteChunkType_Path = 0x2017,
+    AsepriteChunkType_FrameTags = 0x2018,
+    AsepriteChunkType_Palette = 0x2019,
+    AsepriteChunkType_UserData = 0x2020,
 } AsepriteChunkType;
 
 typedef enum
@@ -68,6 +68,14 @@ typedef struct
     u16 duration;
     u16 numChunks;
     AsepriteFrameChunk *chunks;
+} AsepriteFrameRaw;
+
+typedef struct
+{
+    u16 sizeX;
+    u16 sizeY;
+    u16 frameDuration;
+    u32 *pixels;
 } AsepriteFrame;
 
 typedef struct
@@ -76,7 +84,9 @@ typedef struct
     u16 width;
     u16 height;
     u16 numFrames;
-    AsepriteFrame *frames;
+    AsepriteFrameRaw *frames;
 } AsepriteFile;
 
+void PrintSpriteToConsole(u16 celWidth, u16 celHeight, u32 *pixels);
 AsepriteFile *AsepriteLoad(Arena *arena, String *path);
+AsepriteFrame *AsepriteGetFrame(Arena *arena, AsepriteFile *file, usize frameIndex);

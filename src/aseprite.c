@@ -58,7 +58,7 @@ AsepriteFile *AsepriteLoad(Arena *arena, String *path)
     // Check the number of frames
     u16 numFrames = ByteArrayReadU16(spriteParser.data, &spriteParser.offset);
     file->numFrames = numFrames;
-    file->frames = ArenaPushArray(arena, numFrames, AsepriteFrame);
+    file->frames = ArenaPushArray(arena, numFrames, AsepriteFrameRaw);
     AsepriteDebugPrint("Number of frames: %u\n", numFrames);
 
     // Check the width and height
@@ -75,7 +75,7 @@ AsepriteFile *AsepriteLoad(Arena *arena, String *path)
     u16 framesProcessed = 0;
     do
     {
-        AsepriteFrame *frame = &file->frames[framesProcessed];
+        AsepriteFrameRaw *frame = &file->frames[framesProcessed];
 
         AsepriteDebugPrint("\n");
 
@@ -129,7 +129,7 @@ AsepriteFile *AsepriteLoad(Arena *arena, String *path)
 
             switch (chunkType)
             {
-            case AsepriteChunkType_CelChunk:
+            case AsepriteChunkType_Cel:
             {
                 AsepriteFrameCelChunk *celChunk = &chunk->chunk.frameCel;
 
@@ -297,4 +297,55 @@ AsepriteFile *AsepriteLoad(Arena *arena, String *path)
     AsepriteDebugPrint("===========================================================\n\n");
 
     return file;
+}
+
+AsepriteFrame *AsepriteGetFrame(Arena *arena, AsepriteFile *file, usize frameIndex)
+{
+    AsepriteFrameRaw *rawFrame = &file->frames[frameIndex];
+
+    AsepriteFrame *frame = ArenaPushStruct(arena, AsepriteFrame);
+    frame->sizeX = file->width;
+    frame->sizeY = file->height;
+    frame->frameDuration = rawFrame->duration;
+    frame->pixels = NULL;
+
+    for (u32 chunkIndex = 0; chunkIndex < rawFrame->numChunks; chunkIndex++)
+    {
+        AsepriteFrameChunk *chunk = &rawFrame->chunks[chunkIndex];
+
+        switch (chunk->type)
+        {
+        case AsepriteChunkType_Cel:
+        {
+            AsepriteFrameCelChunk *celChunk = &chunk->chunk.frameCel;
+
+            switch (celChunk->celType)
+            {
+            case AsepriteCelType_CompressedImage:
+            {
+                AespriteCelCompressedImage *compressedImage = &celChunk->cel.compressedImage;
+
+                frame->pixels = compressedImage->pixels;
+            };
+            break;
+
+            default:
+            {
+                AsepriteDebugPrint("Unsupported CelType: %u\n", celChunk->celType);
+                exit(EXIT_FAILURE);
+            };
+            break;
+            }
+        };
+        break;
+
+        default:
+        {
+            AsepriteDebugPrint("Unsupported ChunkType: %u\n", chunk->type);
+        };
+        break;
+        }
+    }
+
+    return frame;
 }

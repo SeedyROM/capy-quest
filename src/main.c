@@ -19,12 +19,14 @@ int main(void)
         StringBuilderAppend(sb, STR("capy1.aseprite"));
         String path = sb->string;
 
+        // Load the aesprite file and print some info
         AsepriteFile *file = AsepriteLoad(arena, &path);
-
-        printf("File size: %u\n", file->size);
-        printf("Width: %u\n", file->width);
-        printf("Height: %u\n", file->height);
-    };
+        for (u16 frameIndex = 0; frameIndex < file->numFrames; frameIndex++)
+        {
+            AsepriteFrame *frame = AsepriteGetFrame(arena, file, frameIndex);
+            printf("Frame %d: %dx%d\n", frameIndex, frame->sizeX, frame->sizeY);
+        }
+    }
 
     GLFWwindow *window;
 
