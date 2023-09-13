@@ -1,1 +1,0 @@
-#include "aseprite.h"

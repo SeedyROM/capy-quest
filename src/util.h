@@ -3,8 +3,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#define Byte 1
-#define Kilobyte (Byte * 1024)
+#define Kilobyte (1024)
 #define Megabyte (Kilobyte * 1024)
 #define Gigabyte (Megabyte * 1024)
 

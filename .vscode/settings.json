@@ -16,6 +16,9 @@
     "chrono": "c",
     "algorithm": "c",
     "format": "c",
-    "cstddef": "c"
+    "cstddef": "c",
+    "arena.h": "c",
+    "zlib.h": "c",
+    "aseprite.h": "c"
   }
 }
