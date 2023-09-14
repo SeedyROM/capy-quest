@@ -24,3 +24,11 @@ typedef double f64;
 
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
+
+#define ARRAY(type, name) \
+    struct                \
+    {                     \
+        type *ptr;        \
+        usize len;        \
+        usize cap;        \
+    } name

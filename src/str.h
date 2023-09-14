@@ -12,7 +12,10 @@ typedef struct String
     char *ptr;
 } String;
 
+String *StringCopy(Arena *arena, String *string);
 String *StringCopyCString(Arena *arena, const char *string);
+void StringSlice(String *string, u64 start, u64 end);
+u64 StringFindLastOccurrence(String *string, char c);
 
 #define STR(ptr) \
     (String) { sizeof(ptr) - 1, ptr }

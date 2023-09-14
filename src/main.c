@@ -14,6 +14,12 @@
 #include "str.h"
 #include "util.h"
 
+typedef struct SpriteAssetPath
+{
+    String name;
+    String path;
+} SpriteAssetPath;
+
 int main(void)
 {
     // Initialize SDL
@@ -47,37 +53,84 @@ int main(void)
         // Path to glob for sprites
         String spriteAssetsGlob = STR("../assets/sprites/*.aseprite");
 
-        // Glob all the sprite assets
-        glob_t globResult;
-        glob(spriteAssetsGlob.ptr, GLOB_TILDE, NULL, &globResult);
+        // Sprite assets memory
+        ARRAY(SpriteAssetPath, spriteAssets);
 
-        // Allocate space for the paths
-        struct
         {
-            u32 len;
-            String *ptr;
-        } spriteAssets;
-        spriteAssets.len = globResult.gl_pathc;
-        spriteAssets.ptr = ArenaPushArrayZero(arena, spriteAssets.len, String);
+            // Glob all the sprite assets
+            glob_t globResult;
+            glob(spriteAssetsGlob.ptr, GLOB_TILDE, NULL, &globResult);
 
-        printf("Found %d sprite assets\n", spriteAssets.len);
+            // Allocate space for the paths
+            spriteAssets.len = globResult.gl_pathc;
+            spriteAssets.ptr = ArenaPushArrayZero(arena, spriteAssets.len, SpriteAssetPath);
 
-        // Get the paths;
-        for (usize i = 0; i < spriteAssets.len; i++)
-        {
-            // Copy each path from the glob
-            String *pathString = StringCopyCString(arena, globResult.gl_pathv[i]);
-            spriteAssets.ptr[i] = *pathString;
+            printf("Found %zu sprite assets\n", spriteAssets.len);
+
+            // Get the paths;
+            for (usize i = 0; i < spriteAssets.len; i++)
+            {
+                // Copy each path from the glob
+                String *pathString = StringCopyCString(arena, globResult.gl_pathv[i]);
+                spriteAssets.ptr[i].path = *pathString;
+
+                // Get the name of the sprite asset without the extension and path
+                String *nameString = StringCopy(arena, pathString);
+                u64 lastSlash = StringFindLastOccurrence(nameString, '/') + 1;
+                u64 lastDot = StringFindLastOccurrence(nameString, '.') - 1;
+                StringSlice(nameString, lastSlash, lastDot);
+
+                // Print the sprite asset name
+                printf("Sprite asset: %s.%s\n", nameString->ptr);
+
+                // Put the name in the sprite asset path
+                spriteAssets.ptr[i].name = *nameString;
+            }
         }
 
-        // Free the glob result
-        globfree(&globResult);
+        // ARRAY(String, spriteAssets);
+        // {
+        //     // Glob all the sprite assets
+        //     glob_t globResult;
+        //     glob(spriteAssetsGlob.ptr, GLOB_TILDE, NULL, &globResult);
 
-        for (usize i = 0; i < spriteAssets.len; i++)
-        {
-            printf("%s\n", spriteAssets.ptr[i].ptr);
-        }
+        //     // Allocate space for the paths
+        //     spriteAssets.len = globResult.gl_pathc;
+        //     spriteAssets.ptr = ArenaPushArrayZero(arena, spriteAssets.len, String);
 
+        //     printf("Found %zu sprite assets\n", spriteAssets.len);
+
+        //     // Get the paths;
+        //     for (usize i = 0; i < spriteAssets.len; i++)
+        //     {
+        //         // Copy each path from the glob
+        //         String *pathString = StringCopyCString(arena, globResult.gl_pathv[i]);
+        //         spriteAssets.ptr[i] = *pathString;
+        //     }
+
+        //     // Free the glob result
+        //     globfree(&globResult);
+        // }
+
+        // for (usize i = 0; i < spriteAssets.len; i++)
+        // {
+        //     String *path = &spriteAssets.ptr[i];
+        //     printf("Loading sprite asset: %s\n", path->ptr);
+
+        //     // Load the sprite
+        //     AsepriteFile *sprite = AsepriteLoad(arena, path);
+
+        //     // Get all the animation frames
+        //     ARRAY(AsepriteAnimationFrame, animationFrames);
+        //     {
+        //         animationFrames.len = sprite->numFrames;
+        //         animationFrames.ptr = ArenaPushArrayZero(arena, animationFrames.len, AsepriteAnimationFrame);
+        //         for (u16 frameIndex = 0; frameIndex < sprite->numFrames; frameIndex++)
+        //         {
+        //             AsepriteGetAnimationFrame(sprite, frameIndex, &animationFrames.ptr[frameIndex]);
+        //         }
+        //     }
+        // }
         // Load the sprite
         // AsepriteFile *file = AsepriteLoad(arena, &path);
 
