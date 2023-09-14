@@ -32,3 +32,9 @@ typedef double f64;
         usize len;        \
         usize cap;        \
     } name
+
+#define ARRAY_ALLOC(arena, type, name, count) \
+    ARRAY(type, name) = {                     \
+        ArenaPushArray(arena, count, type),   \
+        count,                                \
+        count}

@@ -89,9 +89,7 @@ int main(void)
         }
 
         // Load the sprite assets
-        ARRAY(AsepriteFile, sprites);
-        sprites.len = spriteAssetPaths.len;
-        sprites.ptr = ArenaPushArrayZero(arena, sprites.len, AsepriteFile);
+        ARRAY_ALLOC(arena, AsepriteFile, sprites, spriteAssetPaths.len);
 
         for (usize i = 0; i < sprites.len; i++)
         {
