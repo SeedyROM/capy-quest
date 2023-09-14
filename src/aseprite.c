@@ -11,7 +11,7 @@
 // ======================================================================================
 // Define this to print a ton of debug info
 // ======================================================================================
-#define ASEPRITE_DEBUG
+#undef ASEPRITE_DEBUG
 // ======================================================================================
 
 #ifdef ASEPRITE_DEBUG
@@ -113,6 +113,8 @@ AsepriteFile *AsepriteLoad(Arena *arena, String *path)
         u16 chunksProcessed = 0;
         do
         {
+            usize chunkStart = spriteParser.offset;
+
             AsepriteFrameChunk *chunk = &frame->chunks[chunksProcessed];
 
             AsepriteDebugPrint("\n");
@@ -131,7 +133,11 @@ AsepriteFile *AsepriteLoad(Arena *arena, String *path)
             {
             case AsepriteChunkType_Cel:
             {
+
                 AsepriteFrameCelChunk *celChunk = &chunk->chunk.frameCel;
+
+                // Allocate the actual cel pixels
+                celChunk->pixels = ArenaPushArrayZero(arena, spriteWidth * spriteHeight, u32);
 
                 AsepriteDebugPrint("\nProcessing CelChunk\n");
 
@@ -193,7 +199,7 @@ AsepriteFile *AsepriteLoad(Arena *arena, String *path)
 
                     // WTF is this?
                     // It's the CelHeader size...
-                    usize compressedSize = chunkSize - 26;
+                    usize compressedSize = chunkSize - (spriteParser.offset - chunkStart);
                     u8 *compressedData = ByteArrayReadArrayU8(spriteParser.data, &spriteParser.offset, compressedSize);
 
                     AsepriteDebugPrint("\nCompressed Data (Blob):\n\n");
@@ -244,6 +250,16 @@ AsepriteFile *AsepriteLoad(Arena *arena, String *path)
                     inflateEnd(&stream);
 
                     compressedImage->pixels = pixels;
+
+                    // Copy the pixels from the compressedImage to the celChunk at the correct position
+                    for (u16 y = 0; y < celHeight; y++)
+                    {
+                        for (u16 x = 0; x < celWidth; x++)
+                        {
+                            u32 pixel = pixels[y * celWidth + x];
+                            celChunk->pixels[(y + positionY) * spriteWidth + (x + positionX)] = pixel;
+                        }
+                    }
 
                     AsepriteDebugPrint("Decompressed Data (Pixels):\n\n");
                     // Print the decompressed data.
@@ -299,11 +315,10 @@ AsepriteFile *AsepriteLoad(Arena *arena, String *path)
     return file;
 }
 
-AsepriteFrame *AsepriteGetFrame(Arena *arena, AsepriteFile *file, usize frameIndex)
+AsepriteAnimationFrame *AsepriteGetAnimationFrame(AsepriteFile *file, usize frameIndex, AsepriteAnimationFrame *frame)
 {
     AsepriteFrameRaw *rawFrame = &file->frames[frameIndex];
 
-    AsepriteFrame *frame = ArenaPushStruct(arena, AsepriteFrame);
     frame->sizeX = file->width;
     frame->sizeY = file->height;
     frame->frameDuration = rawFrame->duration;
@@ -319,30 +334,17 @@ AsepriteFrame *AsepriteGetFrame(Arena *arena, AsepriteFile *file, usize frameInd
         {
             AsepriteFrameCelChunk *celChunk = &chunk->chunk.frameCel;
 
-            switch (celChunk->celType)
-            {
-            case AsepriteCelType_CompressedImage:
-            {
-                AespriteCelCompressedImage *compressedImage = &celChunk->cel.compressedImage;
-
-                frame->pixels = compressedImage->pixels;
-            };
-            break;
-
-            default:
-            {
-                AsepriteDebugPrint("Unsupported CelType: %u\n", celChunk->celType);
-                exit(EXIT_FAILURE);
-            };
-            break;
-            }
+            frame->layerIndex = celChunk->layerIndex;
+            frame->positionX = celChunk->positionX;
+            frame->positionY = celChunk->positionY;
+            frame->opacity = celChunk->opacity;
+            frame->zIndex = celChunk->zIndex;
+            frame->pixels = celChunk->pixels;
         };
-        break;
 
         default:
         {
-            AsepriteDebugPrint("Unsupported ChunkType: %u\n", chunk->type);
-        };
+        }
         break;
         }
     }

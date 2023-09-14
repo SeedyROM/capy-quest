@@ -8,7 +8,7 @@
 static const u32 AsepriteFileMagic = 0xA5E0;
 static const u32 AsepriteFrameMagic = 0xF1FA;
 
-typedef enum
+typedef enum AsepriteChunkType
 {
     AsepriteChunkType_Layer = 0x2004,
     AsepriteChunkType_Cel = 0x2005,
@@ -21,7 +21,7 @@ typedef enum
     AsepriteChunkType_UserData = 0x2020,
 } AsepriteChunkType;
 
-typedef enum
+typedef enum AsepriteCelType
 {
     AsepriteCelType_RawCel = 0,
     AsepriteCelType_LinkedCel = 1,
@@ -29,14 +29,14 @@ typedef enum
     AespriteCelType_CompressedTileMap = 3,
 } AsepriteCelType;
 
-typedef struct
+typedef struct AespriteCelCompressedImage
 {
     u16 width;
     u16 height;
     u32 *pixels;
 } AespriteCelCompressedImage;
 
-typedef struct
+typedef struct AsepriteFrameCelChunk
 {
     u16 layerIndex;
     u16 positionX;
@@ -44,6 +44,7 @@ typedef struct
     u8 opacity;
     u16 celType;
     i16 zIndex;
+    u32 *pixels;
 
     union
     {
@@ -51,7 +52,7 @@ typedef struct
     } cel;
 } AsepriteFrameCelChunk;
 
-typedef struct
+typedef struct AsepriteFrameChunk
 {
     u32 size;
     AsepriteChunkType type;
@@ -62,7 +63,7 @@ typedef struct
     } chunk;
 } AsepriteFrameChunk;
 
-typedef struct
+typedef struct AsepriteFrameRaw
 {
     u32 size;
     u16 duration;
@@ -70,15 +71,20 @@ typedef struct
     AsepriteFrameChunk *chunks;
 } AsepriteFrameRaw;
 
-typedef struct
+typedef struct AsepriteAnimationFrame
 {
     u16 sizeX;
     u16 sizeY;
     u16 frameDuration;
+    u16 layerIndex;
+    u16 positionX;
+    u16 positionY;
+    u8 opacity;
+    i16 zIndex;
     u32 *pixels;
-} AsepriteFrame;
+} AsepriteAnimationFrame;
 
-typedef struct
+typedef struct AsepriteFile
 {
     u32 size;
     u16 width;
@@ -89,4 +95,4 @@ typedef struct
 
 void PrintSpriteToConsole(u16 celWidth, u16 celHeight, u32 *pixels);
 AsepriteFile *AsepriteLoad(Arena *arena, String *path);
-AsepriteFrame *AsepriteGetFrame(Arena *arena, AsepriteFile *file, usize frameIndex);
+AsepriteAnimationFrame *AsepriteGetAnimationFrame(AsepriteFile *file, usize frameIndex, AsepriteAnimationFrame *frame);

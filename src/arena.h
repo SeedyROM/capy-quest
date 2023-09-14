@@ -28,7 +28,7 @@ void ArenaClear(Arena *arena);
 #define ArenaPushStruct(arena, type) (type *)ArenaPush(arena, sizeof(type))
 #define AreanPushStructZero(arena, type) (type *)ArenaPushZero(arena, sizeof(type))
 #define ArenaPushArray(arena, count, type) (type *)ArenaPush(arena, (count) * sizeof(type))
-#define ArenaPushArrayZero(arena, count, type) (type *)ArenaPushZero(arena, (count) * sizeof(type))
+#define ArenaPushArrayZero(arena, count, type) (type *)ArenaPushZero(arena, count, (count) * sizeof(type))
 #define ArenaPopStruct(arena, type) ArenaPop(arena, sizeof(type))
 #define ArenaPopArray(arena, count, type) ArenaPop(arena, (count) * sizeof(type))
 

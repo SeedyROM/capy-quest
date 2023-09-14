@@ -19,6 +19,7 @@
     "cstddef": "c",
     "arena.h": "c",
     "zlib.h": "c",
-    "aseprite.h": "c"
+    "aseprite.h": "c",
+    "glfw3.h": "c"
   }
 }
