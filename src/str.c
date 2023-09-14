@@ -1,5 +1,14 @@
 #include "str.h"
 
+String *StringCopyCString(Arena *arena, const char *string)
+{
+    String *result = ArenaPushStruct(arena, String);
+    result->len = strlen(string);
+    result->ptr = ArenaPushArray(arena, result->len + 1, char);
+    memcpy(result->ptr, string, result->len + 1);
+    return result;
+}
+
 StringBuilder *StringBuilderAlloc(Arena *arena)
 {
     StringBuilder *result = ArenaPushStruct(arena, StringBuilder);

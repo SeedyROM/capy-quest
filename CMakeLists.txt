@@ -16,7 +16,6 @@ set(CMAKE_C_FLAGS "-fsanitize=address -Wall -Wextra -pedantic -g -O0")
 # Find packages
 find_package(SDL2 REQUIRED)
 find_package(SDL2_image REQUIRED)
-find_package(ZLIB REQUIRED)
 
 # Include packages
 include_directories(${ZLIB_INCLUDE_DIRS})
@@ -26,4 +25,4 @@ include_directories(${SDL2_INCLUDE_DIRS})
 include_directories(external/)
 
 add_executable(${PROJECT_NAME} ${SOURCES})
-target_link_libraries(${PROJECT_NAME} SDL2::SDL2 ZLIB::ZLIB)
+target_link_libraries(${PROJECT_NAME} SDL2::SDL2)

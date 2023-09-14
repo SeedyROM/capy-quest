@@ -21,3 +21,6 @@ typedef int64_t i64;
 
 typedef float f32;
 typedef double f64;
+
+#define MAX(x, y) (((x) > (y)) ? (x) : (y))
+#define MIN(x, y) (((x) < (y)) ? (x) : (y))

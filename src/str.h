@@ -12,6 +12,8 @@ typedef struct String
     char *ptr;
 } String;
 
+String *StringCopyCString(Arena *arena, const char *string);
+
 #define STR(ptr) \
     (String) { sizeof(ptr) - 1, ptr }
 #define STR_EQUAL(str1, str2) \

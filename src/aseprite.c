@@ -6,7 +6,26 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#include <zlib.h>
+
+#define STBI_NO_JPEG
+#define STBI_NO_PNG
+#define STBI_NO_BMP
+#define STBI_NO_PSD
+#define STBI_NO_TGA
+#define STBI_NO_GIF
+#define STBI_NO_HDR
+#define STBI_NO_PIC
+#define STBI_NO_PNM
+#define STBI_SUPPORT_ZLIB
+#define STB_IMAGE_STATIC
+#define STBI_ASSERT(x) assert(x)
+#define STB_IMAGE_IMPLEMENTATION
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wnewline-eof"
+#pragma clang diagnostic ignored "-Wunused-parameter"
+#pragma clang diagnostic ignored "-Wunused-function"
+#include "stb_image.h"
+#pragma clang diagnostic pop
 
 // ======================================================================================
 // Define this to print a ton of debug info
@@ -171,7 +190,7 @@ AsepriteFile *AsepriteLoad(Arena *arena, String *path)
                 {
                 case AsepriteCelType_RawCel:
                 {
-                    AsepriteDebugPrint("Unsupported CelType: RawCel\n");
+                    printf("Unsupported CelType: RawCel\n");
                     exit(EXIT_FAILURE);
                 };
                 break;
@@ -216,38 +235,13 @@ AsepriteFile *AsepriteLoad(Arena *arena, String *path)
 
                     pixels = ArenaPushArray(arena, celWidth * celHeight, u32);
 
-                    // Set up zlib's inflate stream
-                    z_stream stream;
-                    stream.zalloc = Z_NULL;
-                    stream.zfree = Z_NULL;
-                    stream.opaque = Z_NULL;
-                    stream.avail_in = 0;
-                    stream.next_in = Z_NULL;
-
-                    // Initialize the inflate stream with the compressed data
-                    int ret = inflateInit(&stream);
-                    if (ret != Z_OK)
+                    // Decompress the data
+                    int decompressionResult = stbi_zlib_decode_buffer((char *)pixels, celWidth * celHeight * sizeof(u32), (char *)compressedData, compressedSize);
+                    if (decompressionResult == -1)
                     {
-                        AsepriteDebugPrint("gzip inflateInit failed: %s\n", zError(ret));
-                        exit(EXIT_FAILURE);
+                        printf("Decompression failed: %s\n", stbi_failure_reason());
+                        exit(1);
                     }
-
-                    stream.avail_in = compressedSize;
-                    stream.next_in = compressedData;
-
-                    stream.avail_out = celWidth * celHeight * sizeof(u32);
-                    stream.next_out = (unsigned char *)pixels;
-
-                    // Perform decompression
-                    ret = inflate(&stream, Z_FINISH);
-                    if (ret != Z_STREAM_END)
-                    {
-                        AsepriteDebugPrint("gzip inflate failed: %s\n", zError(ret));
-                        exit(EXIT_FAILURE);
-                    }
-
-                    // Clean up the inflate stream
-                    inflateEnd(&stream);
 
                     compressedImage->pixels = pixels;
 
@@ -289,7 +283,7 @@ AsepriteFile *AsepriteLoad(Arena *arena, String *path)
 
                 case AespriteCelType_CompressedTileMap:
                 {
-                    AsepriteDebugPrint("CompressedTileMap not supported!!!\n");
+                    printf("CompressedTileMap not supported!!!\n");
                     exit(1);
                 };
                 break;
