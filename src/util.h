@@ -55,6 +55,20 @@ typedef double f64;
         0,                                      \
         count}
 
+// TODO(SeedyROM): Fix incompatible pointer types warning
+#define ARRAY_INIT(arena, type, name, count)    \
+    type name = {                               \
+        ArenaPushArrayZero(arena, count, type), \
+        0,                                      \
+        count}
+
+// TODO(SeedyROM): Fix incompatible pointer types warning
+#define ARRAY_INIT_RESERVED(arena, type, name, count) \
+    type name = {                                     \
+        ArenaPushArrayZero(arena, count, type),       \
+        count,                                        \
+        count}
+
 // TODO(SeedyROM): Don't use memcpy here
 #define ARRAY_PUSH(arena, array, type, value)                      \
     do                                                             \

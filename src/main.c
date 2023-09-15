@@ -14,7 +14,7 @@
 #include "str.h"
 #include "util.h"
 
-DEFINE_ARRAY(SDL_Rect, TextureAtlasFrames);
+typedef SDL_Rect TextureAtlasFrame;
 
 typedef struct TextureAtlasIndex
 {
@@ -22,6 +22,8 @@ typedef struct TextureAtlasIndex
     u32 frameIndex;
     String *name;
 } TextureAtlasIndex;
+
+DEFINE_ARRAY(TextureAtlasFrame, TextureAtlasFrames);
 DEFINE_ARRAY(TextureAtlasIndex, TextureAtlasIndices);
 
 i64 TextureAtlasIndicesGetIndex(TextureAtlasIndices *indices, String *name)
@@ -103,8 +105,8 @@ int main(void)
     u16 atlasWidth = 0;
     u16 atlasHeight = 0;
 
-    ARRAY_ALLOC(arena, TextureAtlasIndex, textureAtlasIndices, 128);
-    ARRAY_ALLOC(arena, SDL_Rect, textureAtlasFrames, 128);
+    ARRAY_INIT(arena, TextureAtlasIndices, textureAtlasIndices, 128);
+    ARRAY_INIT(arena, TextureAtlasFrames, textureAtlasFrames, 128);
 
     {
         Arena *textureAtlasArena = ArenaAlloc(128 * Megabyte);
@@ -304,10 +306,12 @@ int main(void)
         time++;
     }
 
-    // Cleanup
+    // Shutdown SDL
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();
+
+    // Clean up memory
     ArenaFree(arena);
 
     return 0;
