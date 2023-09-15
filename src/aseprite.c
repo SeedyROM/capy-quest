@@ -30,10 +30,10 @@
 // ======================================================================================
 // Define this to print a ton of debug info
 // ======================================================================================
-#undef ASEPRITE_DEBUG
+#define ASEPRITE_DEBUG 0
 // ======================================================================================
 
-#ifdef ASEPRITE_DEBUG
+#if ASEPRITE_DEBUG == 1
 static inline void AsepriteDebugPrint(const char *fmt, ...)
 {
     va_list args;

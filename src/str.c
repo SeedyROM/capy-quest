@@ -1,5 +1,14 @@
 #include "str.h"
 
+String *StringCopy(Arena *arena, String *string)
+{
+    String *result = ArenaPushStruct(arena, String);
+    result->len = string->len;
+    result->ptr = ArenaPushArray(arena, result->len + 1, char);
+    memcpy(result->ptr, string->ptr, result->len + 1);
+    return result;
+}
+
 String *StringCopyCString(Arena *arena, const char *string)
 {
     String *result = ArenaPushStruct(arena, String);
@@ -7,6 +16,28 @@ String *StringCopyCString(Arena *arena, const char *string)
     result->ptr = ArenaPushArray(arena, result->len + 1, char);
     memcpy(result->ptr, string, result->len + 1);
     return result;
+}
+
+void StringSlice(String *string, u64 start, u64 end)
+{
+    string->ptr += start;
+    string->len = end - start;
+
+    // Null-terminate the string for convenience
+    string->ptr[string->len + 1] = '\0';
+}
+
+u64 StringFindLastOccurrence(String *string, char c)
+{
+    for (u64 i = string->len; i > 0; i--)
+    {
+        if (string->ptr[i] == c)
+        {
+            return i;
+        }
+    }
+
+    return 0;
 }
 
 StringBuilder *StringBuilderAlloc(Arena *arena)
@@ -26,6 +57,11 @@ void StringBuilderAppend(StringBuilder *sb, String string)
     newPtr[newLen] = '\0'; // Null-terminate the concatenated string
     sb->string.len = newLen;
     sb->string.ptr = newPtr;
+}
+
+int StringCompare(String *string1, String *string2)
+{
+    return strncmp(string1->ptr, string2->ptr, MIN((int)string1->len, (int)string2->len));
 }
 
 void StringBuilderClear(StringBuilder *sb)
