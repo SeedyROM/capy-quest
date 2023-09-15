@@ -24,7 +24,7 @@ typedef struct TextureAtlasIndex
 } TextureAtlasIndex;
 DEFINE_ARRAY(TextureAtlasIndex, TextureAtlasIndices);
 
-usize TextureAtlasIndicesGetIndex(TextureAtlasIndices *indices, String *name)
+i64 TextureAtlasIndicesGetIndex(TextureAtlasIndices *indices, String *name)
 {
     for (usize i = 0; i < indices->len; i++)
     {
@@ -39,7 +39,7 @@ usize TextureAtlasIndicesGetIndex(TextureAtlasIndices *indices, String *name)
 
 TextureAtlasFrames TextureAtlasIndicesGetFrames(TextureAtlasIndices *indices, TextureAtlasFrames *frames, String *name)
 {
-    usize index = TextureAtlasIndicesGetIndex(indices, name);
+    int index = TextureAtlasIndicesGetIndex(indices, name);
     if (index == -1)
     {
         printf("Failed to find texture atlas index for %s\n", name->ptr);
@@ -83,8 +83,21 @@ int main(void)
         fprintf(stderr, "SDL_CreateRenderer Error: %s\n", SDL_GetError());
         return 1;
     }
+
+    // Window scale factor
+    int windowScaleFactor = 4;
+
+    // Get the window size
+    int windowRealWidth = 0;
+    int windowRealHeight = 0;
+    SDL_GetWindowSize(window, &windowRealWidth, &windowRealHeight);
+
+    // Get the scaled window size
+    int windowWidth = windowRealWidth / windowScaleFactor;
+    int windowHeight = windowRealHeight / windowScaleFactor;
+
     // Set the logical size of the renderer
-    SDL_RenderSetLogicalSize(renderer, 1280 / 8, 720 / 8);
+    SDL_RenderSetLogicalSize(renderer, windowWidth, windowHeight);
 
     SDL_Texture *atlasTexture;
     u16 atlasWidth = 0;
