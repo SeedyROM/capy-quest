@@ -16,6 +16,7 @@ String *StringCopy(Arena *arena, String *string);
 String *StringCopyCString(Arena *arena, const char *string);
 void StringSlice(String *string, u64 start, u64 end);
 u64 StringFindLastOccurrence(String *string, char c);
+int StringCompare(String *string1, String *string2);
 
 #define STR(ptr) \
     (String) { sizeof(ptr) - 1, ptr }

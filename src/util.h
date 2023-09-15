@@ -35,6 +35,14 @@ typedef double f64;
         usize cap;        \
     } name
 
+#define DEFINE_ARRAY(type, name) \
+    typedef struct name          \
+    {                            \
+        type *ptr;               \
+        usize len;               \
+        usize cap;               \
+    } name
+
 #define ARRAY_ALLOC_RESERVED(arena, type, name, count) \
     ARRAY(type, name) = {                              \
         ArenaPushArrayZero(arena, count, type),        \
