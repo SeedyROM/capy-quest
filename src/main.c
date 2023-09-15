@@ -263,7 +263,7 @@ int main(void)
     }
 
     // Get the capy sprite frames
-    TextureAtlasFrames capyFrames = TextureAtlasIndicesGetFrames(&textureAtlasIndices, &textureAtlasFrames, &STR("coin"));
+    TextureAtlasFrames capyFrames = TextureAtlasIndicesGetFrames(&textureAtlasIndices, &textureAtlasFrames, &STR("capy_idle"));
 
     // Get the first frame of the capy sprite
     SDL_Rect capyTextureRect = capyFrames.ptr[0];
