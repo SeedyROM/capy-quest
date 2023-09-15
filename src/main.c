@@ -22,6 +22,8 @@ typedef struct SpriteAssetPath
 
 int main(void)
 {
+    Arena *arena = ArenaAlloc(512 * Megabyte);
+
     // Initialize SDL
     if (SDL_Init(SDL_INIT_VIDEO) != 0)
     {
@@ -47,7 +49,10 @@ int main(void)
 
     // SDL_Surface *capySurface;
 
-    Arena *arena = ArenaAlloc(512 * Megabyte);
+    SDL_Texture *atlasTexture;
+    u16 atlasWidth = 0;
+    u16 atlasHeight = 0;
+
     tempMemoryBlock(arena)
     {
         // Path to glob for sprites
@@ -89,7 +94,10 @@ int main(void)
         }
 
         // Load the sprite assets
-        ARRAY_ALLOC(arena, AsepriteFile, sprites, spriteAssetPaths.len);
+        ARRAY_ALLOC_RESERVED(arena, AsepriteFile, sprites, spriteAssetPaths.len);
+
+        // Allocate space for the sprite frames
+        ARRAY_ALLOC(arena, AsepriteAnimationFrame, spriteFrames, 128);
 
         for (usize i = 0; i < sprites.len; i++)
         {
@@ -97,10 +105,84 @@ int main(void)
             String *spriteAssetPath = &spriteAssetPaths.ptr[i].path;
             String *spriteAssetName = &spriteAssetPaths.ptr[i].name;
 
-            printf("Loading sprite asset: %s\n", spriteAssetPath->ptr);
+            printf("Loading sprite asset: %s = %s\n", spriteAssetName->ptr, spriteAssetPath->ptr);
             AsepriteFile *sprite = &sprites.ptr[i];
             sprite = AsepriteLoad(arena, spriteAssetPath);
+
+            // Get all the the frames
+            for (usize j = 0; j < sprite->numFrames; j++)
+            {
+                AsepriteAnimationFrame spriteFrameProcessed;
+                AsepriteGetAnimationFrame(sprite, j, &spriteFrameProcessed);
+                ARRAY_PUSH(arena, spriteFrames, AsepriteAnimationFrame, spriteFrameProcessed);
+            }
         }
+
+        ARRAY_ALLOC_RESERVED(arena, stbrp_rect, spriteRects, spriteFrames.len);
+        for (usize i = 0; i < spriteFrames.len; i++)
+        {
+            stbrp_rect *rect = &spriteRects.ptr[i];
+            rect->id = i;
+            rect->w = spriteFrames.ptr[i].sizeX;
+            rect->h = spriteFrames.ptr[i].sizeY;
+        }
+
+        // Pack the sprite frames using stb_rectpack
+        stbrp_context context;
+        stbrp_node *nodes = ArenaPushArray(arena, spriteFrames.len, stbrp_node);
+        stbrp_init_target(&context, spriteRects.len * 8, INT32_MAX, nodes, spriteRects.len);
+        int result = stbrp_pack_rects(&context, spriteRects.ptr, spriteRects.len);
+        if (result == 0)
+        {
+            printf("Failed to pack sprite frames\n");
+            return 1;
+        }
+
+        // Get the size of the atlas
+        for (usize i = 0; i < spriteFrames.len; i++)
+        {
+            stbrp_rect *rect = &spriteRects.ptr[i];
+            if (rect->x + rect->w > atlasWidth)
+            {
+                atlasWidth = rect->x + rect->w;
+            }
+
+            if (rect->y + rect->h > atlasHeight)
+            {
+                atlasHeight = rect->y + rect->h;
+            }
+        }
+
+        // Allocate space for the atlas
+        u32 *atlasPixels = ArenaPushArrayZero(arena, atlasWidth * atlasHeight, u32);
+
+        // Copy the sprite frames into the atlas
+        for (usize i = 0; i < spriteFrames.len; i++)
+        {
+            stbrp_rect *rect = &spriteRects.ptr[i];
+            AsepriteAnimationFrame *spriteFrame = &spriteFrames.ptr[rect->id];
+
+            for (u16 y = 0; y < spriteFrame->sizeY; y++)
+            {
+                for (u16 x = 0; x < spriteFrame->sizeX; x++)
+                {
+                    u32 *atlasPixel = &atlasPixels[(rect->y + y) * atlasWidth + (rect->x + x)];
+                    u32 *spritePixel = &spriteFrame->pixels[y * spriteFrame->sizeX + x];
+
+                    *atlasPixel = *spritePixel;
+                }
+            }
+        }
+
+        // Create a texture from the atlas
+        atlasTexture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ABGR8888, SDL_TEXTUREACCESS_STATIC, atlasWidth, atlasHeight);
+
+        // Copy the atlas pixels into the texture
+        SDL_UpdateTexture(atlasTexture, NULL, atlasPixels, atlasWidth * sizeof(u32));
+
+        // Setup 0x00000000 as the transparent color
+        SDL_SetTextureBlendMode(atlasTexture, SDL_BLENDMODE_BLEND);
+        SDL_SetTextureAlphaMod(atlasTexture, 0x00000000);
     }
 
     SDL_Event event;
@@ -118,6 +200,10 @@ int main(void)
         // Clear the screen
         SDL_SetRenderDrawColor(renderer, 0, 128, 200, 255);
         SDL_RenderClear(renderer);
+
+        // Draw the atlas
+        SDL_Rect atlasRect = {0, 0, atlasWidth * 4, atlasHeight * 4};
+        SDL_RenderCopy(renderer, atlasTexture, NULL, &atlasRect);
 
         // Update the screen
         SDL_RenderPresent(renderer);
