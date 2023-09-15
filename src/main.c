@@ -28,7 +28,7 @@ i64 TextureAtlasIndicesGetIndex(TextureAtlasIndices *indices, String *name)
 {
     for (usize i = 0; i < indices->len; i++)
     {
-        if (StringCompare(indices->ptr[i].name, name))
+        if (StringCompare(indices->ptr[i].name, name) == 0)
         {
             return i;
         }
@@ -40,7 +40,7 @@ i64 TextureAtlasIndicesGetIndex(TextureAtlasIndices *indices, String *name)
 TextureAtlasFrames TextureAtlasIndicesGetFrames(TextureAtlasIndices *indices, TextureAtlasFrames *frames, String *name)
 {
     int index = TextureAtlasIndicesGetIndex(indices, name);
-    if (index == -1)
+    if (index < 0)
     {
         printf("Failed to find texture atlas index for %s\n", name->ptr);
         exit(EXIT_FAILURE);
@@ -263,7 +263,7 @@ int main(void)
     }
 
     // Get the capy sprite frames
-    TextureAtlasFrames capyFrames = TextureAtlasIndicesGetFrames(&textureAtlasIndices, &textureAtlasFrames, &STR("capy_indle"));
+    TextureAtlasFrames capyFrames = TextureAtlasIndicesGetFrames(&textureAtlasIndices, &textureAtlasFrames, &STR("coin"));
 
     // Get the first frame of the capy sprite
     SDL_Rect capyTextureRect = capyFrames.ptr[0];
@@ -292,7 +292,7 @@ int main(void)
         SDL_RenderClear(renderer);
 
         // Draw a rect from the atlas texture
-        SDL_Rect drawRect = {0, 0, capyTextureRect.w, capyTextureRect.h};
+        SDL_Rect drawRect = {0, 0, capyTextureRect.w * 4, capyTextureRect.h * 4};
         SDL_RenderCopy(renderer, atlasTexture, &capyTextureRect, &drawRect);
 
         // Update the screen
