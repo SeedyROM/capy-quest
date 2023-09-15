@@ -56,17 +56,17 @@ typedef double f64;
         count}
 
 // TODO(SeedyROM): Fix incompatible pointer types warning
-#define ARRAY_INIT(arena, type, name, count)    \
-    type name = {                               \
-        ArenaPushArrayZero(arena, count, type), \
-        0,                                      \
+#define ARRAY_INIT(arena, type, subtype, name, count) \
+    type name = {                                     \
+        ArenaPushArrayZero(arena, count, subtype),    \
+        0,                                            \
         count}
 
 // TODO(SeedyROM): Fix incompatible pointer types warning
-#define ARRAY_INIT_RESERVED(arena, type, name, count) \
-    type name = {                                     \
-        ArenaPushArrayZero(arena, count, type),       \
-        count,                                        \
+#define ARRAY_INIT_RESERVED(arena, type, subtype, name, count) \
+    type name = {                                              \
+        ArenaPushArrayZero(arena, count, subtype),             \
+        count,                                                 \
         count}
 
 // TODO(SeedyROM): Don't use memcpy here

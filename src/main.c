@@ -105,8 +105,8 @@ int main(void)
     u16 atlasWidth = 0;
     u16 atlasHeight = 0;
 
-    ARRAY_INIT(arena, TextureAtlasIndices, textureAtlasIndices, 128);
-    ARRAY_INIT(arena, TextureAtlasFrames, textureAtlasFrames, 128);
+    ARRAY_INIT(arena, TextureAtlasIndices, TextureAtlasIndex, textureAtlasIndices, 128);
+    ARRAY_INIT(arena, TextureAtlasFrames, TextureAtlasFrame, textureAtlasFrames, 128);
 
     {
         Arena *textureAtlasArena = ArenaAlloc(128 * Megabyte);
@@ -123,8 +123,8 @@ int main(void)
             } SpriteAssetPath;
             ARRAY(SpriteAssetPath, spriteAssetPaths);
 
+            // Glob for sprite assets
             {
-                // Glob all the sprite assets
                 glob_t globResult;
                 glob(spriteAssetsGlob.ptr, GLOB_TILDE, NULL, &globResult);
 
