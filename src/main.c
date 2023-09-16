@@ -1,15 +1,9 @@
 #include <stdio.h>
 #include <stdbool.h>
-#include <glob.h>
 
 #include <SDL2/SDL.h>
 
-#define STB_RECT_PACK_IMPLEMENTATION
-#include <stb_rectpack.h>
-
 #include "arena.h"
-#include "aseprite.h"
-#include "fs.h"
 #include "gfx.h"
 #include "str.h"
 #include "util.h"
@@ -45,7 +39,7 @@ int main(void)
     }
 
     // Window scale factor
-    int windowScaleFactor = 4;
+    int windowScaleFactor = 8;
 
     // Get the window size
     int windowRealWidth = 0;
@@ -59,178 +53,21 @@ int main(void)
     // Set the logical size of the renderer
     SDL_RenderSetLogicalSize(renderer, windowWidth, windowHeight);
 
-    SDL_Texture *atlasTexture;
-    u16 atlasWidth = 0;
-    u16 atlasHeight = 0;
-
-    ARRAY_INIT(arena, TextureAtlasIndices, TextureAtlasIndex, textureAtlasIndices, 128);
-    ARRAY_INIT(arena, TextureAtlasFrames, TextureAtlasFrame, textureAtlasFrames, 128);
-
-    {
-        Arena *textureAtlasArena = ArenaAlloc(128 * Megabyte);
-        tempMemoryBlock(textureAtlasArena)
-        {
-            // Path to glob for sprites
-            String spriteAssetsGlob = STR("../assets/sprites/*.aseprite");
-
-            // Sprite assets memory
-            typedef struct SpriteAssetPath
-            {
-                String name;
-                String path;
-            } SpriteAssetPath;
-            ARRAY(SpriteAssetPath, spriteAssetPaths);
-
-            // Glob for sprite assets
-            {
-                glob_t globResult;
-                glob(spriteAssetsGlob.ptr, GLOB_TILDE, NULL, &globResult);
-
-                // Allocate space for the paths
-                spriteAssetPaths.len = globResult.gl_pathc;
-                spriteAssetPaths.ptr = ArenaPushArrayZero(textureAtlasArena, spriteAssetPaths.len, SpriteAssetPath);
-
-                printf("Found %zu sprite assets\n", spriteAssetPaths.len);
-
-                // Get the paths;
-                for (usize i = 0; i < spriteAssetPaths.len; i++)
-                {
-                    // Copy each path from the glob
-                    String *pathString = StringCopyCString(textureAtlasArena, globResult.gl_pathv[i]);
-                    spriteAssetPaths.ptr[i].path = *pathString;
-
-                    // Get the name of the sprite asset without the extension and path
-                    String *nameString = StringCopy(textureAtlasArena, pathString);
-                    u64 lastSlash = StringFindLastOccurrence(nameString, '/') + 1;
-                    u64 lastDot = StringFindLastOccurrence(nameString, '.') - 1;
-                    StringSlice(nameString, lastSlash, lastDot);
-
-                    // Print the sprite asset name
-                    printf("Sprite asset: %s\n", nameString->ptr);
-
-                    // Put the name in the sprite asset path
-                    spriteAssetPaths.ptr[i].name = *nameString;
-                }
-            }
-
-            // Load the sprite assets
-            ARRAY_ALLOC_RESERVED(textureAtlasArena, AsepriteFile, sprites, spriteAssetPaths.len);
-
-            // Allocate space for the sprite frames
-            ARRAY_ALLOC(textureAtlasArena, AsepriteAnimationFrame, spriteFrames, 128);
-
-            for (usize i = 0; i < sprites.len; i++)
-            {
-                // Read the sprite asset file
-                String *spriteAssetPath = &spriteAssetPaths.ptr[i].path;
-                String *spriteAssetName = &spriteAssetPaths.ptr[i].name;
-
-                printf("Loading sprite asset: %s = %s\n", spriteAssetName->ptr, spriteAssetPath->ptr);
-                AsepriteFile *sprite = &sprites.ptr[i];
-                sprite = AsepriteLoad(textureAtlasArena, spriteAssetPath);
-
-                // Add the sprite asset to the atlas index
-                TextureAtlasIndex atlasIndex = {
-                    .numFrames = sprite->numFrames,
-                    .frameIndex = spriteFrames.len,
-                    .name = StringCopy(textureAtlasArena, spriteAssetName)};
-                ARRAY_PUSH(arena, textureAtlasIndices, TextureAtlasIndex, atlasIndex);
-
-                // Get all the the frames
-                for (usize j = 0; j < sprite->numFrames; j++)
-                {
-                    AsepriteAnimationFrame spriteFrameProcessed;
-                    AsepriteGetAnimationFrame(sprite, j, &spriteFrameProcessed);
-                    ARRAY_PUSH(textureAtlasArena, spriteFrames, AsepriteAnimationFrame, spriteFrameProcessed);
-                }
-            }
-
-            ARRAY_ALLOC_RESERVED(textureAtlasArena, stbrp_rect, spriteRects, spriteFrames.len);
-            for (usize i = 0; i < spriteFrames.len; i++)
-            {
-                stbrp_rect *rect = &spriteRects.ptr[i];
-                rect->id = i;
-                rect->w = spriteFrames.ptr[i].sizeX;
-                rect->h = spriteFrames.ptr[i].sizeY;
-            }
-
-            // Pack the sprite frames using stb_rectpack
-            {
-                stbrp_context context;
-                stbrp_node *nodes = ArenaPushArray(textureAtlasArena, spriteFrames.len, stbrp_node);
-                stbrp_init_target(&context, spriteRects.len * 8, INT32_MAX, nodes, spriteRects.len);
-                int result = stbrp_pack_rects(&context, spriteRects.ptr, spriteRects.len);
-                if (result == 0)
-                {
-                    printf("Failed to pack sprite frames\n");
-                    return 1;
-                }
-            }
-
-            // Get the size of the atlas
-            for (usize i = 0; i < spriteFrames.len; i++)
-            {
-                stbrp_rect *rect = &spriteRects.ptr[i];
-                if (rect->x + rect->w > atlasWidth)
-                {
-                    atlasWidth = rect->x + rect->w;
-                }
-
-                if (rect->y + rect->h > atlasHeight)
-                {
-                    atlasHeight = rect->y + rect->h;
-                }
-            }
-
-            // Allocate space for the atlas
-            u32 *atlasPixels = ArenaPushArrayZero(textureAtlasArena, atlasWidth * atlasHeight, u32);
-
-            // Copy the sprite frames into the atlas
-            for (usize i = 0; i < spriteFrames.len; i++)
-            {
-                // Get the rect for the sprite frame
-                stbrp_rect *rect = &spriteRects.ptr[i];
-
-                // Push the rect to the atlas rects
-                {
-                    SDL_Rect atlasRect = {rect->x, rect->y, rect->w, rect->h};
-                    ARRAY_PUSH(arena, textureAtlasFrames, SDL_Rect, atlasRect);
-                }
-
-                // Get the frame pixels and copy them into the atlas
-                AsepriteAnimationFrame *spriteFrame = &spriteFrames.ptr[rect->id];
-                for (u16 y = 0; y < spriteFrame->sizeY; y++)
-                {
-                    for (u16 x = 0; x < spriteFrame->sizeX; x++)
-                    {
-                        u32 *atlasPixel = &atlasPixels[(rect->y + y) * atlasWidth + (rect->x + x)];
-                        u32 *spritePixel = &spriteFrame->pixels[y * spriteFrame->sizeX + x];
-
-                        *atlasPixel = *spritePixel;
-                    }
-                }
-            }
-
-            // Create a texture from the atlas
-            atlasTexture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ABGR8888, SDL_TEXTUREACCESS_STATIC, atlasWidth, atlasHeight);
-
-            // Copy the atlas pixels into the texture
-            SDL_UpdateTexture(atlasTexture, NULL, atlasPixels, atlasWidth * sizeof(u32));
-
-            // Allow for alpha blending
-            SDL_SetTextureBlendMode(atlasTexture, SDL_BLENDMODE_BLEND);
-        }
-        ArenaFree(textureAtlasArena);
-    }
+    // Load the texture atlas
+    TextureAtlas *textureAtlas = TextureAtlasInit(arena);
+    TextureAtlasLoad(renderer, textureAtlas, &STR("../assets/sprites/*.aseprite"));
 
     // Get the capy sprite frames
-    TextureAtlasFrames capyFrames = TextureAtlasIndicesGetFrames(&textureAtlasIndices, &textureAtlasFrames, &STR("capy_idle"));
-
+    TextureAtlasFrames capyFrames = TextureAtlasIndicesGetFrames(textureAtlas, &STR("capy_idle"));
     // Get the first frame of the capy sprite
     SDL_Rect capyTextureRect = capyFrames.ptr[0];
 
+    SDL_Rect drawRect = {0, 0, capyTextureRect.w, capyTextureRect.h};
+
+    // Dumb timer
     u64 time = 0;
 
+    // Loop de loop
     SDL_Event event;
     bool running = true;
     while (running)
@@ -243,6 +80,25 @@ int main(void)
             }
         }
 
+        // Move with arrow keys
+        const Uint8 *state = SDL_GetKeyboardState(NULL);
+        if (state[SDL_SCANCODE_LEFT])
+        {
+            drawRect.x -= 1;
+        }
+        if (state[SDL_SCANCODE_RIGHT])
+        {
+            drawRect.x += 1;
+        }
+        if (state[SDL_SCANCODE_UP])
+        {
+            drawRect.y -= 1;
+        }
+        if (state[SDL_SCANCODE_DOWN])
+        {
+            drawRect.y += 1;
+        }
+
         if (time % 20 == 0)
         {
             capyTextureRect = capyFrames.ptr[time / 20 % capyFrames.len];
@@ -253,8 +109,7 @@ int main(void)
         SDL_RenderClear(renderer);
 
         // Draw a rect from the atlas texture
-        SDL_Rect drawRect = {0, 0, capyTextureRect.w * 4, capyTextureRect.h * 4};
-        SDL_RenderCopy(renderer, atlasTexture, &capyTextureRect, &drawRect);
+        SDL_RenderCopy(renderer, textureAtlas->texture, &capyTextureRect, &drawRect);
 
         // Update the screen
         SDL_RenderPresent(renderer);

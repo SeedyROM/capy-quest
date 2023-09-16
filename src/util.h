@@ -60,6 +60,14 @@ typedef double f64;
         0,                                            \
         count}
 
+#define ARRAY_INIT_DEFINED(arena, type, subtype, count) \
+    (type)                                              \
+    {                                                   \
+        ArenaPushArrayZero(arena, count, subtype),      \
+            0,                                          \
+            count                                       \
+    }
+
 // TODO(SeedyROM): Fix incompatible pointer types warning
 #define ARRAY_INIT_RESERVED(arena, type, subtype, name, count) \
     type name = {                                              \
