@@ -3,8 +3,6 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#include "arena.h"
-
 #define Kilobyte (1024)
 #define Megabyte (Kilobyte * 1024)
 #define Gigabyte (Megabyte * 1024)
@@ -84,3 +82,9 @@ typedef double f64;
                                                                    \
         array.ptr[array.len++] = value;                            \
     } while (0)
+
+typedef struct Vec2
+{
+    f32 x;
+    f32 y;
+} Vec2;

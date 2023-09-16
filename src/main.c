@@ -3,7 +3,6 @@
 #include <glob.h>
 
 #include <SDL2/SDL.h>
-#include <SDL2/SDL_image.h>
 
 #define STB_RECT_PACK_IMPLEMENTATION
 #include <stb_rectpack.h>
@@ -11,50 +10,9 @@
 #include "arena.h"
 #include "aseprite.h"
 #include "fs.h"
+#include "gfx.h"
 #include "str.h"
 #include "util.h"
-
-typedef SDL_Rect TextureAtlasFrame;
-
-typedef struct TextureAtlasIndex
-{
-    u16 numFrames;
-    u32 frameIndex;
-    String *name;
-} TextureAtlasIndex;
-
-DEFINE_ARRAY(TextureAtlasFrame, TextureAtlasFrames);
-DEFINE_ARRAY(TextureAtlasIndex, TextureAtlasIndices);
-
-i64 TextureAtlasIndicesGetIndex(TextureAtlasIndices *indices, String *name)
-{
-    for (usize i = 0; i < indices->len; i++)
-    {
-        if (StringCompare(indices->ptr[i].name, name) == 0)
-        {
-            return i;
-        }
-    }
-
-    return -1;
-}
-
-TextureAtlasFrames TextureAtlasIndicesGetFrames(TextureAtlasIndices *indices, TextureAtlasFrames *frames, String *name)
-{
-    int index = TextureAtlasIndicesGetIndex(indices, name);
-    if (index < 0)
-    {
-        printf("Failed to find texture atlas index for %s\n", name->ptr);
-        exit(EXIT_FAILURE);
-    }
-
-    TextureAtlasIndex *indexEntry = &indices->ptr[index];
-    TextureAtlasFrames foundFrames = {
-        .ptr = &frames->ptr[indexEntry->frameIndex],
-        .len = indexEntry->numFrames};
-
-    return foundFrames;
-}
 
 int main(void)
 {
@@ -262,6 +220,7 @@ int main(void)
             // Allow for alpha blending
             SDL_SetTextureBlendMode(atlasTexture, SDL_BLENDMODE_BLEND);
         }
+        ArenaFree(textureAtlasArena);
     }
 
     // Get the capy sprite frames
