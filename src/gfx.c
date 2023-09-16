@@ -208,3 +208,51 @@ TextureAtlasFrames TextureAtlasIndicesGetFrames(TextureAtlas *atlas, String *nam
 
     return foundFrames;
 }
+
+Sprite *SpriteFromAtlas(Arena *arena, TextureAtlas *atlas, String *name)
+{
+    Sprite *sprite = ArenaPushStruct(arena, Sprite);
+    sprite->atlas = atlas;
+    sprite->frames = TextureAtlasIndicesGetFrames(atlas, name);
+    sprite->currentFrame = 0;
+    sprite->pos = (Vec2){0, 0};
+    sprite->scale = (Vec2){1, 1};
+    sprite->rotation = 0;
+    sprite->flipX = false;
+    sprite->flipY = false;
+
+    return sprite;
+}
+
+void SpriteDraw(Sprite *sprite, SDL_Renderer *renderer)
+{
+    SDL_Rect *frame = &sprite->frames.ptr[sprite->currentFrame];
+
+    SDL_Rect destRect = {
+        .x = sprite->pos.x,
+        .y = sprite->pos.y,
+        .w = frame->w * sprite->scale.x,
+        .h = frame->h * sprite->scale.y};
+
+    SDL_Point center = {
+        .x = frame->w / 2,
+        .y = frame->h / 2};
+
+    SDL_RendererFlip flip = 0;
+    if (sprite->flipX)
+    {
+        flip |= SDL_FLIP_HORIZONTAL;
+    }
+
+    if (sprite->flipY)
+    {
+        flip |= SDL_FLIP_VERTICAL;
+    }
+
+    SDL_RenderCopyEx(renderer, sprite->atlas->texture, frame, &destRect, sprite->rotation, &center, flip);
+}
+
+void SpriteAdvanceFrame(Sprite *sprite)
+{
+    sprite->currentFrame = (sprite->currentFrame + 1) % sprite->frames.len;
+}

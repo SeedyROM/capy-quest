@@ -57,12 +57,8 @@ int main(void)
     TextureAtlas *textureAtlas = TextureAtlasInit(arena);
     TextureAtlasLoad(renderer, textureAtlas, &STR("../assets/sprites/*.aseprite"));
 
-    // Get the capy sprite frames
-    TextureAtlasFrames capyFrames = TextureAtlasIndicesGetFrames(textureAtlas, &STR("capy_idle"));
-    // Get the first frame of the capy sprite
-    SDL_Rect capyTextureRect = capyFrames.ptr[0];
-
-    SDL_Rect drawRect = {0, 0, capyTextureRect.w, capyTextureRect.h};
+    // Get the capy sprite
+    Sprite *capySprite = SpriteFromAtlas(arena, textureAtlas, &STR("capy"));
 
     // Dumb timer
     u64 time = 0;
@@ -84,24 +80,26 @@ int main(void)
         const Uint8 *state = SDL_GetKeyboardState(NULL);
         if (state[SDL_SCANCODE_LEFT])
         {
-            drawRect.x -= 1;
+            capySprite->pos.x -= 1;
+            capySprite->flipX = true;
         }
         if (state[SDL_SCANCODE_RIGHT])
         {
-            drawRect.x += 1;
+            capySprite->pos.x += 1;
+            capySprite->flipX = false;
         }
         if (state[SDL_SCANCODE_UP])
         {
-            drawRect.y -= 1;
+            capySprite->pos.y -= 1;
         }
         if (state[SDL_SCANCODE_DOWN])
         {
-            drawRect.y += 1;
+            capySprite->pos.y += 1;
         }
 
         if (time % 20 == 0)
         {
-            capyTextureRect = capyFrames.ptr[time / 20 % capyFrames.len];
+            SpriteAdvanceFrame(capySprite);
         }
 
         // Clear the screen
@@ -109,7 +107,7 @@ int main(void)
         SDL_RenderClear(renderer);
 
         // Draw a rect from the atlas texture
-        SDL_RenderCopy(renderer, textureAtlas->texture, &capyTextureRect, &drawRect);
+        SpriteDraw(capySprite, renderer);
 
         // Update the screen
         SDL_RenderPresent(renderer);

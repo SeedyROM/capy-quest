@@ -1,10 +1,13 @@
 #pragma once
 
+#include <stdbool.h>
+
 #include <SDL2/SDL.h>
 
 #include "util.h"
 #include "str.h"
 
+// TODO(SeedyROM): Frames need durations... fuck
 typedef SDL_Rect TextureAtlasFrame;
 
 typedef struct TextureAtlasIndex
@@ -31,3 +34,19 @@ TextureAtlas *TextureAtlasInit(Arena *arena);
 int TextureAtlasLoad(SDL_Renderer *renderer, TextureAtlas *atlas, String *path);
 i64 TextureAtlasIndicesGetIndex(TextureAtlas *atlas, String *name);
 TextureAtlasFrames TextureAtlasIndicesGetFrames(TextureAtlas *atlas, String *name);
+
+typedef struct Sprite
+{
+    TextureAtlas *atlas;
+    TextureAtlasFrames frames;
+    u16 currentFrame;
+    Vec2 pos;
+    Vec2 scale;
+    f32 rotation;
+    bool flipX;
+    bool flipY;
+} Sprite;
+
+Sprite *SpriteFromAtlas(Arena *arena, TextureAtlas *atlas, String *name);
+void SpriteDraw(Sprite *sprite, SDL_Renderer *renderer);
+void SpriteAdvanceFrame(Sprite *sprite);
