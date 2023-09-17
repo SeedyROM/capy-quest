@@ -21,7 +21,7 @@ TextureAtlas *TextureAtlasInit(Arena *arena)
     return atlas;
 }
 
-int TextureAtlasLoad(SDL_Renderer *renderer, TextureAtlas *atlas, String *path)
+int TextureAtlasLoadSprites(SDL_Renderer *renderer, TextureAtlas *atlas, String *path)
 {
     Arena *scratch = ArenaAlloc(128 * Megabyte);
     tempMemoryBlock(scratch)

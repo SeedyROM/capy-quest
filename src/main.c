@@ -8,6 +8,190 @@
 #include "str.h"
 #include "util.h"
 
+static int windowWidth = 0;
+static int windowHeight = 0;
+static f32 gravity = 0.05f;
+
+typedef struct Player
+{
+    Sprite *sprite;
+    Vec2 velocity;
+} Player;
+
+Player *PlayerInit(Arena *arena, Player *player, TextureAtlas *atlas, String *name)
+{
+    player->sprite = SpriteFromAtlas(arena, atlas, name);
+    player->velocity = (Vec2){0, 0};
+
+    return player;
+}
+
+void PlayerUpdate(Player *player, SDL_GameController *controller)
+{
+    bool isUpPressed = false;
+
+    // Gravity
+    player->velocity.y += gravity;
+
+    const f32 maxSpeed = 2.0;
+    // Move with arrow keys
+    const Uint8 *state = SDL_GetKeyboardState(NULL);
+
+    // Move with joystick
+    if (controller != NULL)
+    {
+        // Update the game controller
+        SDL_GameControllerUpdate();
+
+        // Get the joystick state
+        Sint16 xAxis = SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_LEFTX);
+        Sint16 yAxis = SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_LEFTY);
+
+        // printf("xAxis: %d, yAxis: %d\n", xAxis, yAxis);
+        // printf("A Button: %d\n", SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_A));
+
+        // Deadzone
+        if (xAxis > -8000 && xAxis < 8000)
+        {
+            xAxis = 0;
+        }
+        if (yAxis > -8000 && yAxis < 8000)
+        {
+            yAxis = 0;
+        }
+
+        // Move
+        if (xAxis < 0)
+        {
+            // Set to 0 if facing the other way
+            if (player->velocity.x > 0)
+                player->velocity.x = 0;
+
+            if (player->velocity.x > -maxSpeed)
+                player->velocity.x -= 0.05f;
+            else if (player->velocity.x < -maxSpeed)
+                player->velocity.x = -maxSpeed;
+            player->sprite->flipX = true;
+        }
+        if (xAxis > 0)
+        {
+            // Set to 0 if facing the other way
+            if (player->velocity.x < 0)
+                player->velocity.x = 0;
+
+            if (player->velocity.x < maxSpeed)
+                player->velocity.x += 0.05f;
+            else if (player->velocity.x > maxSpeed)
+                player->velocity.x = maxSpeed;
+            player->sprite->flipX = false;
+        }
+
+        // If left and right are not pressed, slow down
+        if (xAxis == 0)
+        {
+            if (player->velocity.x > 0)
+            {
+                player->velocity.x -= 0.05f;
+                if (player->velocity.x < 0)
+                    player->velocity.x = 0;
+            }
+            else if (player->velocity.x < 0)
+            {
+                player->velocity.x += 0.05f;
+                if (player->velocity.x > 0)
+                    player->velocity.x = 0;
+            }
+        }
+
+        // Jump
+        // if (yAxis < 0)
+        // {
+        isUpPressed = SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_A);
+
+        if (isUpPressed)
+        {
+            player->velocity.y = -1.2;
+            isUpPressed = false;
+        }
+        // }
+    }
+    else
+    {
+
+        if (state[SDL_SCANCODE_LEFT])
+        {
+            if (player->velocity.x > -maxSpeed)
+                player->velocity.x -= 0.05f;
+            else if (player->velocity.x < -maxSpeed)
+                player->velocity.x = -maxSpeed;
+            player->sprite->flipX = true;
+        }
+        if (state[SDL_SCANCODE_RIGHT])
+        {
+            if (player->velocity.x < maxSpeed)
+                player->velocity.x += 0.05f;
+            else if (player->velocity.x > maxSpeed)
+                player->velocity.x = maxSpeed;
+            player->sprite->flipX = false;
+        }
+
+        // If left and right are not pressed, slow down
+        if (!state[SDL_SCANCODE_LEFT] && !state[SDL_SCANCODE_RIGHT])
+        {
+            if (player->velocity.x > 0)
+            {
+                player->velocity.x -= 0.05f;
+                if (player->velocity.x < 0)
+                    player->velocity.x = 0;
+            }
+            else if (player->velocity.x < 0)
+            {
+                player->velocity.x += 0.05f;
+                if (player->velocity.x > 0)
+                    player->velocity.x = 0;
+            }
+        }
+
+        // Jump
+        if (state[SDL_SCANCODE_UP])
+        {
+            if (isUpPressed)
+            {
+                player->velocity.y = -1.2;
+                isUpPressed = false;
+            }
+        }
+    }
+
+    // Update position
+    player->sprite->pos.x += player->velocity.x;
+    player->sprite->pos.y += player->velocity.y;
+
+    // TODO(SeedyROM: Clamp position to screen, REMOVE ME
+    if (player->sprite->pos.x < 0)
+    {
+        player->sprite->pos.x = 0;
+    }
+    if (player->sprite->pos.x > windowWidth - player->sprite->frames.ptr[player->sprite->currentFrame].w)
+    {
+        player->sprite->pos.x = windowWidth - player->sprite->frames.ptr[player->sprite->currentFrame].w;
+    }
+
+    // Clamp position to screen y
+    if (player->sprite->pos.y < 0)
+    {
+        player->sprite->pos.y = 0;
+    }
+    if (player->sprite->pos.y > windowHeight - player->sprite->frames.ptr[player->sprite->currentFrame].h)
+    {
+        player->sprite->pos.y = windowHeight - player->sprite->frames.ptr[player->sprite->currentFrame].h;
+    }
+}
+void PlayerDraw(Player *player, SDL_Renderer *renderer)
+{
+    SpriteDraw(player->sprite, renderer);
+}
+
 int main(void)
 {
     Arena *arena = ArenaAlloc(128 * Megabyte);
@@ -47,19 +231,23 @@ int main(void)
     SDL_GetWindowSize(window, &windowRealWidth, &windowRealHeight);
 
     // Get the scaled window size
-    int windowWidth = windowRealWidth / windowScaleFactor;
-    int windowHeight = windowRealHeight / windowScaleFactor;
+    windowWidth = windowRealWidth / windowScaleFactor;
+    windowHeight = windowRealHeight / windowScaleFactor;
 
     // Set the logical size of the renderer
     SDL_RenderSetLogicalSize(renderer, windowWidth, windowHeight);
 
     // Load the texture atlas
     TextureAtlas *textureAtlas = TextureAtlasInit(arena);
-    TextureAtlasLoad(renderer, textureAtlas, &STR("../assets/sprites/*.aseprite"));
+    TextureAtlasLoadSprites(renderer, textureAtlas, &STR("../assets/sprites/*.aseprite"));
 
-    // Get the capy sprite
-    Sprite *capySprite = SpriteFromAtlas(arena, textureAtlas, &STR("capy"));
-    Vec2 capyVelocity = {0, 0};
+    Player player;
+    PlayerInit(arena, &player, textureAtlas, &STR("capy"));
+
+    // Make a coin sprite
+    Sprite *coinSprite = SpriteFromAtlas(arena, textureAtlas, &STR("coin"));
+    coinSprite->pos.x = 100;
+    coinSprite->pos.y = 100;
 
     // Gravity
     f32 gravity = 0.05f;
@@ -70,7 +258,10 @@ int main(void)
     // Setup the joystick
     SDL_GameController *controller = NULL;
     // Load the joystick mapping
-    SDL_GameControllerAddMappingsFromFile("../assets/gamecontrollerdb.txt");
+    if (SDL_GameControllerAddMappingsFromFile("../assets/gamecontrollerdb.txt") == -1)
+    {
+        fprintf(stderr, "SDL_GameControllerAddMappingsFromFile Error: %s\n", SDL_GetError());
+    }
     // Print how many joysticks are connected
     printf("Number of joysticks connected: %d\n", SDL_NumJoysticks());
     if (SDL_NumJoysticks() > 0)
@@ -87,8 +278,6 @@ int main(void)
     {
         // Print the joystick name
         printf("Controller name: %s\n", SDL_GameControllerName(controller));
-        startX = SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_LEFTX);
-        startY = SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_LEFTY);
     }
 
     // Loop de loop
@@ -96,7 +285,6 @@ int main(void)
     bool running = true;
     while (running)
     {
-        bool isUpPressed = false;
 
         while (SDL_PollEvent(&event))
         {
@@ -104,187 +292,26 @@ int main(void)
             {
                 running = false;
             }
-
-            if (event.type == SDL_KEYDOWN)
-            {
-                if (event.key.keysym.sym == SDLK_UP)
-                {
-                    isUpPressed = true;
-                }
-            }
-        }
-
-        // Gravity
-        capyVelocity.y += gravity;
-
-        const f32 maxSpeed = 2.0;
-        // Move with arrow keys
-        const Uint8 *state = SDL_GetKeyboardState(NULL);
-
-        // Move with joystick
-        if (controller != NULL)
-        {
-            // Update the game controller
-            SDL_GameControllerUpdate();
-
-            // Get the joystick state
-            Sint16 xAxis = SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_LEFTX) - startX;
-            Sint16 yAxis = SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_LEFTY) - startY;
-
-            printf("xAxis: %d, yAxis: %d\n", xAxis, yAxis);
-            printf("A Button: %d\n", SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_A));
-
-            // printf("xAxis: %d, yAxis: %d\n", xAxis, yAxis);
-            // printf("Button 0: %d\n", SDL_GameControllerGetButton(joystick, 0));
-
-            // Deadzone
-            if (xAxis > -4000 && xAxis < 4000)
-            {
-                xAxis = 0;
-            }
-            if (yAxis > -4000 && yAxis < 4000)
-            {
-                yAxis = 0;
-            }
-
-            // Move
-            if (xAxis < 0)
-            {
-                // Set to 0 if facing the other way
-                if (capyVelocity.x > 0)
-                    capyVelocity.x = 0;
-
-                if (capyVelocity.x > -maxSpeed)
-                    capyVelocity.x -= 0.05f;
-                else if (capyVelocity.x < -maxSpeed)
-                    capyVelocity.x = -maxSpeed;
-                capySprite->flipX = true;
-            }
-            if (xAxis > 0)
-            {
-                // Set to 0 if facing the other way
-                if (capyVelocity.x < 0)
-                    capyVelocity.x = 0;
-
-                if (capyVelocity.x < maxSpeed)
-                    capyVelocity.x += 0.05f;
-                else if (capyVelocity.x > maxSpeed)
-                    capyVelocity.x = maxSpeed;
-                capySprite->flipX = false;
-            }
-
-            // If left and right are not pressed, slow down
-            if (xAxis == 0)
-            {
-                if (capyVelocity.x > 0)
-                {
-                    capyVelocity.x -= 0.05f;
-                    if (capyVelocity.x < 0)
-                        capyVelocity.x = 0;
-                }
-                else if (capyVelocity.x < 0)
-                {
-                    capyVelocity.x += 0.05f;
-                    if (capyVelocity.x > 0)
-                        capyVelocity.x = 0;
-                }
-            }
-
-            // Jump
-            // if (yAxis < 0)
-            // {
-            isUpPressed = SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_A);
-
-            if (isUpPressed)
-            {
-                capyVelocity.y = -1.2;
-                isUpPressed = false;
-            }
-            // }
-        }
-        else
-        {
-
-            if (state[SDL_SCANCODE_LEFT])
-            {
-                if (capyVelocity.x > -maxSpeed)
-                    capyVelocity.x -= 0.05f;
-                else if (capyVelocity.x < -maxSpeed)
-                    capyVelocity.x = -maxSpeed;
-                capySprite->flipX = true;
-            }
-            if (state[SDL_SCANCODE_RIGHT])
-            {
-                if (capyVelocity.x < maxSpeed)
-                    capyVelocity.x += 0.05f;
-                else if (capyVelocity.x > maxSpeed)
-                    capyVelocity.x = maxSpeed;
-                capySprite->flipX = false;
-            }
-
-            // If left and right are not pressed, slow down
-            if (!state[SDL_SCANCODE_LEFT] && !state[SDL_SCANCODE_RIGHT])
-            {
-                if (capyVelocity.x > 0)
-                {
-                    capyVelocity.x -= 0.05f;
-                    if (capyVelocity.x < 0)
-                        capyVelocity.x = 0;
-                }
-                else if (capyVelocity.x < 0)
-                {
-                    capyVelocity.x += 0.05f;
-                    if (capyVelocity.x > 0)
-                        capyVelocity.x = 0;
-                }
-            }
-
-            // Jump
-            if (state[SDL_SCANCODE_UP])
-            {
-                if (isUpPressed)
-                {
-                    capyVelocity.y = -1.2;
-                    isUpPressed = false;
-                }
-            }
-        }
-
-        // Update position
-        capySprite->pos.x += capyVelocity.x;
-        capySprite->pos.y += capyVelocity.y;
-
-        // Clamp position to screen
-        if (capySprite->pos.x < 0)
-        {
-            capySprite->pos.x = 0;
-        }
-        if (capySprite->pos.x > windowWidth - capySprite->frames.ptr[capySprite->currentFrame].w)
-        {
-            capySprite->pos.x = windowWidth - capySprite->frames.ptr[capySprite->currentFrame].w;
-        }
-
-        // Clamp position to screen y
-        if (capySprite->pos.y < 0)
-        {
-            capySprite->pos.y = 0;
-        }
-        if (capySprite->pos.y > windowHeight - capySprite->frames.ptr[capySprite->currentFrame].h)
-        {
-            capySprite->pos.y = windowHeight - capySprite->frames.ptr[capySprite->currentFrame].h;
         }
 
         if (time % 20 == 0)
         {
-            SpriteNextFrame(capySprite);
+            SpriteNextFrame(player.sprite);
         }
+
+        if (time % 10 == 0)
+        {
+            SpriteNextFrame(coinSprite);
+        }
+
+        PlayerUpdate(&player, controller);
 
         // Clear the screen
         SDL_SetRenderDrawColor(renderer, 0, 128, 200, 255);
         SDL_RenderClear(renderer);
 
-        // Draw a rect from the atlas texture
-        SpriteDraw(capySprite, renderer);
+        PlayerDraw(&player, renderer);
+        SpriteDraw(coinSprite, renderer);
 
         // Update the screen
         SDL_RenderPresent(renderer);
