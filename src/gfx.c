@@ -8,7 +8,7 @@
 #include "aseprite.h"
 #include "util.h"
 
-TextureAtlas *TextureAtlasInit(Arena *arena)
+TextureAtlas *TextureAtlasCreate(Arena *arena)
 {
     TextureAtlas *atlas = ArenaPushStruct(arena, TextureAtlas);
     atlas->arena = arena;
