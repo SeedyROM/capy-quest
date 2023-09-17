@@ -252,7 +252,12 @@ void SpriteDraw(Sprite *sprite, SDL_Renderer *renderer)
     SDL_RenderCopyEx(renderer, sprite->atlas->texture, frame, &destRect, sprite->rotation, &center, flip);
 }
 
-void SpriteAdvanceFrame(Sprite *sprite)
+void SpriteNextFrame(Sprite *sprite)
 {
     sprite->currentFrame = (sprite->currentFrame + 1) % sprite->frames.len;
+}
+
+void SpritePreviousFrame(Sprite *sprite)
+{
+    sprite->currentFrame = (sprite->currentFrame - 1) % sprite->frames.len;
 }

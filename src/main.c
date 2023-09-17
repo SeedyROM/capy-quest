@@ -39,7 +39,7 @@ int main(void)
     }
 
     // Window scale factor
-    int windowScaleFactor = 8;
+    int windowScaleFactor = 4;
 
     // Get the window size
     int windowRealWidth = 0;
@@ -59,6 +59,10 @@ int main(void)
 
     // Get the capy sprite
     Sprite *capySprite = SpriteFromAtlas(arena, textureAtlas, &STR("capy"));
+    Vec2 capyVelocity = {0, 0};
+
+    // Gravity
+    f32 gravity = 0.05f;
 
     // Dumb timer
     u64 time = 0;
@@ -68,38 +72,104 @@ int main(void)
     bool running = true;
     while (running)
     {
+        bool isUpPressed = false;
+
         while (SDL_PollEvent(&event))
         {
             if (event.type == SDL_QUIT)
             {
                 running = false;
             }
+
+            if (event.type == SDL_KEYDOWN)
+            {
+                if (event.key.keysym.sym == SDLK_UP)
+                {
+                    isUpPressed = true;
+                }
+            }
         }
 
+        // Gravity
+        capyVelocity.y += gravity;
+
+        const f32 maxSpeed = 2.0;
         // Move with arrow keys
         const Uint8 *state = SDL_GetKeyboardState(NULL);
         if (state[SDL_SCANCODE_LEFT])
         {
-            capySprite->pos.x -= 1;
+            if (capyVelocity.x > -maxSpeed)
+                capyVelocity.x -= 0.05f;
+            else if (capyVelocity.x < -maxSpeed)
+                capyVelocity.x = -maxSpeed;
             capySprite->flipX = true;
         }
         if (state[SDL_SCANCODE_RIGHT])
         {
-            capySprite->pos.x += 1;
+            if (capyVelocity.x < maxSpeed)
+                capyVelocity.x += 0.05f;
+            else if (capyVelocity.x > maxSpeed)
+                capyVelocity.x = maxSpeed;
             capySprite->flipX = false;
         }
+
+        // If left and right are not pressed, slow down
+        if (!state[SDL_SCANCODE_LEFT] && !state[SDL_SCANCODE_RIGHT])
+        {
+            if (capyVelocity.x > 0)
+            {
+                capyVelocity.x -= 0.05f;
+                if (capyVelocity.x < 0)
+                    capyVelocity.x = 0;
+            }
+            else if (capyVelocity.x < 0)
+            {
+                capyVelocity.x += 0.05f;
+                if (capyVelocity.x > 0)
+                    capyVelocity.x = 0;
+            }
+        }
+
+        // Jump
         if (state[SDL_SCANCODE_UP])
         {
-            capySprite->pos.y -= 1;
+            if (isUpPressed)
+            {
+                capyVelocity.y = -1.2;
+                isUpPressed = false;
+            }
         }
-        if (state[SDL_SCANCODE_DOWN])
+
+        // Apply friction
+        // capyVelocity.x *= 0.9f;
+
+        // Update position
+        capySprite->pos.x += capyVelocity.x;
+        capySprite->pos.y += capyVelocity.y;
+
+        // Clamp position to screen
+        if (capySprite->pos.x < 0)
         {
-            capySprite->pos.y += 1;
+            capySprite->pos.x = 0;
+        }
+        if (capySprite->pos.x > windowWidth - capySprite->frames.ptr[capySprite->currentFrame].w)
+        {
+            capySprite->pos.x = windowWidth - capySprite->frames.ptr[capySprite->currentFrame].w;
+        }
+
+        // Clamp position to screen y
+        if (capySprite->pos.y < 0)
+        {
+            capySprite->pos.y = 0;
+        }
+        if (capySprite->pos.y > windowHeight - capySprite->frames.ptr[capySprite->currentFrame].h)
+        {
+            capySprite->pos.y = windowHeight - capySprite->frames.ptr[capySprite->currentFrame].h;
         }
 
         if (time % 20 == 0)
         {
-            SpriteAdvanceFrame(capySprite);
+            SpriteNextFrame(capySprite);
         }
 
         // Clear the screen

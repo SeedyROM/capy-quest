@@ -49,4 +49,5 @@ typedef struct Sprite
 
 Sprite *SpriteFromAtlas(Arena *arena, TextureAtlas *atlas, String *name);
 void SpriteDraw(Sprite *sprite, SDL_Renderer *renderer);
-void SpriteAdvanceFrame(Sprite *sprite);
+void SpriteNextFrame(Sprite *sprite);
+void SpritePreviousFrame(Sprite *sprite);
