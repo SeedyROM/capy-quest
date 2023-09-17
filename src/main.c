@@ -155,11 +155,7 @@ void PlayerUpdate(Player *player, SDL_GameController *controller)
         // Jump
         if (state[SDL_SCANCODE_UP])
         {
-            if (isUpPressed)
-            {
-                player->velocity.y = -1.2;
-                isUpPressed = false;
-            }
+            player->velocity.y = -1.2;
         }
     }
 
