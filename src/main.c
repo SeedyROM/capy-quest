@@ -303,9 +303,6 @@ int main(void)
     coinSprite->pos.x = 100;
     coinSprite->pos.y = 100;
 
-    // Gravity
-    f32 gravity = 0.05f;
-
     // Dumb timer
     u64 time = 0;
 
