@@ -29,10 +29,10 @@ void *ArenaPush(Arena *arena, usize size)
     return result;
 }
 
-void *ArenaPushZero(Arena *arena, usize count, usize size)
+void *ArenaPushZero(Arena *arena, usize size)
 {
-    void *result = ArenaPush(arena, count * size);
-    memset(result, 0, count * size);
+    void *result = ArenaPush(arena, size);
+    memset(result, 0, size);
     return result;
 }
 

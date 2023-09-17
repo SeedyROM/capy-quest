@@ -60,6 +60,7 @@ void PlayerControl(Controllable *controllable, SDL_GameController *controller)
     // Move with arrow keys
     const Uint8 *state = SDL_GetKeyboardState(NULL);
 
+    // TODO(SeedyROM): Dedup player control logic for keyboard and joystick
     // Move with joystick
     if (controller != NULL)
     {
