@@ -33,7 +33,7 @@ typedef double f64;
         usize cap;        \
     } name
 
-#define DEFINE_ARRAY(type, name) \
+#define ARRAY_DEFINE(type, name) \
     typedef struct name          \
     {                            \
         type *ptr;               \

@@ -14,15 +14,15 @@ static f32 gravity = 0.05f;
 
 typedef struct Controllable
 {
-    Sprite *sprite;
+    Vec2 *position;
     Vec2 *velocity;
 
     void (*update)(struct Controllable *controllable, SDL_GameController *controller);
 } Controllable;
 
-void ControllableInit(Controllable *controllable, Sprite *sprite, Vec2 *velocity, void (*update)(Controllable *controllable, SDL_GameController *controller))
+void ControllableInit(Controllable *controllable, Vec2 *position, Vec2 *velocity, void (*update)(Controllable *controllable, SDL_GameController *controller))
 {
-    controllable->sprite = sprite;
+    controllable->position = position;
     controllable->velocity = velocity;
     controllable->update = update;
 }
@@ -50,7 +50,7 @@ void PlayerControl(Controllable *controllable, SDL_GameController *controller)
 {
     bool isUpPressed = false;
 
-    Sprite *sprite = controllable->sprite;
+    Vec2 *position = controllable->position;
     Vec2 *velocity = controllable->velocity;
 
     // Gravity
@@ -95,7 +95,6 @@ void PlayerControl(Controllable *controllable, SDL_GameController *controller)
                 velocity->x -= 0.05f;
             else if (velocity->x < -maxSpeed)
                 velocity->x = -maxSpeed;
-            sprite->flipX = true;
         }
         if (xAxis > 0)
         {
@@ -107,7 +106,6 @@ void PlayerControl(Controllable *controllable, SDL_GameController *controller)
                 velocity->x += 0.05f;
             else if (velocity->x > maxSpeed)
                 velocity->x = maxSpeed;
-            sprite->flipX = false;
         }
 
         // If left and right are not pressed, slow down
@@ -115,13 +113,13 @@ void PlayerControl(Controllable *controllable, SDL_GameController *controller)
         {
             if (velocity->x > 0)
             {
-                velocity->x -= 0.05f;
+                velocity->x -= 0.09f;
                 if (velocity->x < 0)
                     velocity->x = 0;
             }
             else if (velocity->x < 0)
             {
-                velocity->x += 0.05f;
+                velocity->x += 0.09f;
                 if (velocity->x > 0)
                     velocity->x = 0;
             }
@@ -145,18 +143,16 @@ void PlayerControl(Controllable *controllable, SDL_GameController *controller)
         if (state[SDL_SCANCODE_LEFT])
         {
             if (velocity->x > -maxSpeed)
-                velocity->x -= 0.05f;
+                velocity->x -= 0.09f;
             else if (velocity->x < -maxSpeed)
                 velocity->x = -maxSpeed;
-            sprite->flipX = true;
         }
         if (state[SDL_SCANCODE_RIGHT])
         {
             if (velocity->x < maxSpeed)
-                velocity->x += 0.05f;
+                velocity->x += 0.09f;
             else if (velocity->x > maxSpeed)
                 velocity->x = maxSpeed;
-            sprite->flipX = false;
         }
 
         // If left and right are not pressed, slow down
@@ -164,13 +160,13 @@ void PlayerControl(Controllable *controllable, SDL_GameController *controller)
         {
             if (velocity->x > 0)
             {
-                velocity->x -= 0.05f;
+                velocity->x -= 0.09f;
                 if (velocity->x < 0)
                     velocity->x = 0;
             }
             else if (velocity->x < 0)
             {
-                velocity->x += 0.05f;
+                velocity->x += 0.09f;
                 if (velocity->x > 0)
                     velocity->x = 0;
             }
@@ -188,6 +184,16 @@ void PlayerUpdate(Player *player)
 {
     Sprite *sprite = player->sprite;
 
+    // Flip the sprite
+    if (player->velocity.x < 0)
+    {
+        sprite->flipX = true;
+    }
+    else if (player->velocity.x > 0)
+    {
+        sprite->flipX = false;
+    }
+
     // Update position
     sprite->pos.x += player->velocity.x;
     sprite->pos.y += player->velocity.y;
@@ -196,16 +202,19 @@ void PlayerUpdate(Player *player)
     if (sprite->pos.x < 0)
     {
         sprite->pos.x = 0;
+        player->velocity.x = 0;
     }
     if (sprite->pos.x > windowWidth - sprite->frames.ptr[sprite->currentFrame].w)
     {
         sprite->pos.x = windowWidth - sprite->frames.ptr[sprite->currentFrame].w;
+        player->velocity.x = 0;
     }
 
     // Clamp position to screen y
     if (sprite->pos.y < 0)
     {
         sprite->pos.y = 0;
+        player->velocity.y = 0;
     }
     if (sprite->pos.y > windowHeight - sprite->frames.ptr[sprite->currentFrame].h)
     {
@@ -249,7 +258,7 @@ int main(void)
     }
 
     // Window scale factor
-    int windowScaleFactor = 4;
+    int windowScaleFactor = 8;
 
     // Get the window size
     int windowRealWidth = 0;
@@ -300,8 +309,8 @@ int main(void)
 
     // Make a coin sprite
     Sprite *coinSprite = SpriteFromAtlas(arena, textureAtlas, &STR("coin"));
-    coinSprite->pos.x = 100;
-    coinSprite->pos.y = 100;
+    coinSprite->pos.x = 50;
+    coinSprite->pos.y = 50;
 
     // Dumb timer
     u64 time = 0;
@@ -317,6 +326,23 @@ int main(void)
             if (event.type == SDL_QUIT)
             {
                 running = false;
+            }
+
+            // Add the controller if it's plugged in
+            if (event.type == SDL_CONTROLLERDEVICEADDED)
+            {
+                controller = SDL_GameControllerOpen(0);
+                if (controller == NULL)
+                {
+                    fprintf(stderr, "SDL_JoystickOpen Error: %s\n", SDL_GetError());
+                }
+            }
+
+            // Remove the controller if it's unplugged
+            if (event.type == SDL_CONTROLLERDEVICEREMOVED)
+            {
+                SDL_GameControllerClose(controller);
+                controller = NULL;
             }
         }
 

@@ -17,8 +17,8 @@ typedef struct TextureAtlasIndex
     String *name;
 } TextureAtlasIndex;
 
-DEFINE_ARRAY(TextureAtlasFrame, TextureAtlasFrames);
-DEFINE_ARRAY(TextureAtlasIndex, TextureAtlasIndices);
+ARRAY_DEFINE(TextureAtlasFrame, TextureAtlasFrames);
+ARRAY_DEFINE(TextureAtlasIndex, TextureAtlasIndices);
 
 typedef struct TextureAtlas
 {
