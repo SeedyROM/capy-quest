@@ -221,9 +221,9 @@ void SpriteFromAtlas(Sprite *sprite, TextureAtlas *atlas, String *name)
     sprite->flipY = false;
 }
 
-void SpriteDraw(Sprite *sprite, SDL_Renderer *renderer)
+void SpriteDrawFrame(Sprite *sprite, SDL_Renderer *renderer, u16 currentFrame)
 {
-    SDL_Rect *frame = &sprite->frames.ptr[sprite->currentFrame];
+    SDL_Rect *frame = &sprite->frames.ptr[currentFrame];
 
     SDL_Rect destRect = {
         .x = sprite->pos.x,
@@ -247,6 +247,11 @@ void SpriteDraw(Sprite *sprite, SDL_Renderer *renderer)
     }
 
     SDL_RenderCopyEx(renderer, sprite->atlas->texture, frame, &destRect, sprite->rotation, &center, flip);
+}
+
+void SpriteDraw(Sprite *sprite, SDL_Renderer *renderer)
+{
+    SpriteDrawFrame(sprite, renderer, sprite->currentFrame);
 }
 
 void SpriteNextFrame(Sprite *sprite)

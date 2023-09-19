@@ -272,6 +272,7 @@ typedef struct Coin
     usize time;
     usize collectedTime;
     u16 frameDuration;
+    u16 currentFrame;
     bool delete;
 } Coin;
 
@@ -282,6 +283,7 @@ void CoinInit(Coin *coin, TextureAtlas *atlas)
     coin->time = 0;
     coin->collectedTime = 0;
     coin->frameDuration = 10;
+    coin->currentFrame = 0;
     coin->delete = false;
 
     SpriteFromAtlas(&coin->sprite, atlas, &STR("coin"));
@@ -294,6 +296,7 @@ void CoinCollect(Coin *coin)
     Vec2 pos = coin->sprite.pos;
     SpriteFromAtlas(&coin->sprite, coin->atlas, &STR("coin_collected"));
     coin->sprite.pos = pos;
+    coin->currentFrame = 0;
 
     coin->frameDuration = 5;
     coin->time = 0;
@@ -301,7 +304,7 @@ void CoinCollect(Coin *coin)
 
 void CoinDraw(Coin *coin, SDL_Renderer *renderer)
 {
-    SpriteDraw(&coin->sprite, renderer);
+    SpriteDrawFrame(&coin->sprite, renderer, coin->currentFrame);
 }
 
 void CoinUpdate(Coin *coin)
@@ -316,7 +319,7 @@ void CoinUpdate(Coin *coin)
     }
     if (coin->time % coin->frameDuration == 0)
     {
-        SpriteNextFrame(&coin->sprite);
+        coin->currentFrame = (coin->currentFrame + 1) % coin->sprite.frames.len;
     }
     coin->time += 1;
 }
