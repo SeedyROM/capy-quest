@@ -12,7 +12,7 @@
 
 static int windowWidth = 0;
 static int windowHeight = 0;
-static f32 gravity = 0.05f;
+static f32 gravity = 0.00f;
 
 typedef struct Controllable
 {
@@ -40,12 +40,10 @@ typedef struct Player
     Vec2 velocity;
 } Player;
 
-Player *PlayerInit(Arena *arena, Player *player, TextureAtlas *atlas, String *name)
+void PlayerInit(Player *player, TextureAtlas *atlas, String *name)
 {
     SpriteFromAtlas(&player->sprite, atlas, name);
     player->velocity = (Vec2){0, 0};
-
-    return player;
 }
 
 void PlayerControl(Controllable *controllable, SDL_GameController *controller)
@@ -104,6 +102,36 @@ void PlayerControl(Controllable *controllable, SDL_GameController *controller)
                 velocity->x += 0.05f;
             else if (velocity->x > maxSpeed)
                 velocity->x = maxSpeed;
+        }
+
+        // If the gravity is zero allow up and down movement
+        if (gravity == 0)
+        {
+            if (yAxis < 0)
+            {
+                velocity->y = -1.2;
+            }
+            if (yAxis > 0)
+            {
+                velocity->y = 1.2;
+            }
+
+            // If up and down are not pressed, slow down
+            if (yAxis == 0)
+            {
+                if (velocity->y > 0)
+                {
+                    velocity->y -= 0.09f;
+                    if (velocity->y < 0)
+                        velocity->y = 0;
+                }
+                else if (velocity->y < 0)
+                {
+                    velocity->y += 0.09f;
+                    if (velocity->y > 0)
+                        velocity->y = 0;
+                }
+            }
         }
 
         // If left and right are not pressed, slow down
@@ -245,23 +273,53 @@ bool IsCollision(Sprite *a, Sprite *b)
     return false;
 }
 
-Vec2 CollisionOverlap(Sprite *a, Sprite *b)
+Vec2 CollisionOverlapStatic(Sprite *a, SDL_Rect *b)
 {
-    Vec2 overlap = {0, 0};
-
     SDL_Rect aRect = a->frames.ptr[a->currentFrame];
-    SDL_Rect bRect = b->frames.ptr[b->currentFrame];
 
-    if (a->pos.x < b->pos.x + bRect.w &&
-        a->pos.x + aRect.w > b->pos.x &&
-        a->pos.y < b->pos.y + bRect.h &&
-        a->pos.y + aRect.h > b->pos.y)
+    Vec2 result = {0, 0};
+
+    if (a->pos.x < b->x + b->w &&
+        a->pos.x + aRect.w > b->x &&
+        a->pos.y < b->y + b->h &&
+        a->pos.y + aRect.h > b->y)
     {
-        overlap.x = a->pos.x - b->pos.x;
-        overlap.y = a->pos.y - b->pos.y;
+        // printf("collision\n");
+
+        // Calculate the overlap
+        if (a->pos.x < b->x + b->w &&
+            a->pos.x + aRect.w > b->x)
+        {
+            // printf("x overlap\n");
+            if (a->pos.x < b->x)
+            {
+                // printf("left\n");
+                result.x = a->pos.x + aRect.w - b->x;
+            }
+            else
+            {
+                // printf("right\n");
+                result.x = b->x + b->w - a->pos.x;
+            }
+        }
+        if (a->pos.y < b->y + b->h &&
+            a->pos.y + aRect.h > b->y)
+        {
+            // printf("y overlap\n");
+            if (a->pos.y < b->y)
+            {
+                // printf("top\n");
+                result.y = a->pos.y + aRect.h - b->y;
+            }
+            else
+            {
+                // printf("bottom\n");
+                result.y = b->y + b->h - a->pos.y;
+            }
+        }
     }
 
-    return overlap;
+    return result;
 }
 
 typedef struct Coin
@@ -299,7 +357,7 @@ void CoinCollect(Coin *coin)
     coin->currentFrame = 0;
 
     coin->frameDuration = 5;
-    coin->time = 0;
+    coin->time = 5;
 }
 
 void CoinDraw(Coin *coin, SDL_Renderer *renderer)
@@ -322,6 +380,16 @@ void CoinUpdate(Coin *coin)
         coin->currentFrame = (coin->currentFrame + 1) % coin->sprite.frames.len;
     }
     coin->time += 1;
+}
+
+typedef struct Wall
+{
+    Vec2 position;
+} Wall;
+
+void WallInit(Wall *wall, Vec2 position)
+{
+    wall->position = position;
 }
 
 int main(void)
@@ -355,7 +423,7 @@ int main(void)
     }
 
     // Window scale factor
-    int windowScaleFactor = 8;
+    int windowScaleFactor = 6;
 
     // Get the window size
     int windowRealWidth = 0;
@@ -398,7 +466,7 @@ int main(void)
     TextureAtlasLoadSprites(renderer, textureAtlas, &STR("../assets/sprites/*.aseprite"));
 
     Player player;
-    PlayerInit(arena, &player, textureAtlas, &STR("capy"));
+    PlayerInit(&player, textureAtlas, &STR("capy_idle"));
 
     // Setup the player
     Controllable playerControl;
@@ -407,6 +475,17 @@ int main(void)
     // Coin entity list
     EntityList coinList;
     EntityListInit(arena, &coinList, sizeof(Coin), 32);
+
+    // Get the wall sprite
+    Sprite wallSprite;
+    SpriteFromAtlas(&wallSprite, textureAtlas, &STR("rock"));
+
+    // Create some walls
+    Wall walls[5];
+    for (int i = 0; i < 5; i++)
+    {
+        WallInit(&walls[i], (Vec2){32 + (i * 16), 64 - 8});
+    }
 
     // Add some coins
     for (int i = 0; i < 32; i++)
@@ -461,6 +540,23 @@ int main(void)
             SpriteNextFrame(&player.sprite);
         }
 
+        // Resolve collisions with walls
+        for (int i = 0; i < 4; i++)
+        {
+            SDL_Rect wallRect = {
+                walls[i].position.x,
+                walls[i].position.y,
+                wallSprite.frames.ptr[wallSprite.currentFrame].w,
+                wallSprite.frames.ptr[wallSprite.currentFrame].h};
+
+            Vec2 overlap = CollisionOverlapStatic(&player.sprite, &wallRect);
+
+            if (overlap.x != 0 || overlap.y != 0)
+            {
+                printf("overlap: %f, %f\n", overlap.x, overlap.y);
+            }
+        }
+
         // Update the player
         ControllableUpdate(&playerControl, controller);
         PlayerUpdate(&player);
@@ -494,7 +590,15 @@ int main(void)
             CoinUpdate(coin);
         }
 
+        // Draw the player
         PlayerDraw(&player, renderer);
+
+        // Draw the walls
+        for (int i = 0; i < 4; i++)
+        {
+            wallSprite.pos = walls[i].position;
+            SpriteDraw(&wallSprite, renderer);
+        }
 
         // Update the screen
         SDL_RenderPresent(renderer);
