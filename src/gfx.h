@@ -47,7 +47,7 @@ typedef struct Sprite
     bool flipY;
 } Sprite;
 
-Sprite *SpriteFromAtlas(Arena *arena, TextureAtlas *atlas, String *name);
+void SpriteFromAtlas(Sprite *sprite, TextureAtlas *atlas, String *name);
 void SpriteDraw(Sprite *sprite, SDL_Renderer *renderer);
 void SpriteNextFrame(Sprite *sprite);
 void SpritePreviousFrame(Sprite *sprite);

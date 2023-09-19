@@ -209,9 +209,8 @@ TextureAtlasFrames TextureAtlasIndicesGetFrames(TextureAtlas *atlas, String *nam
     return foundFrames;
 }
 
-Sprite *SpriteFromAtlas(Arena *arena, TextureAtlas *atlas, String *name)
+void SpriteFromAtlas(Sprite *sprite, TextureAtlas *atlas, String *name)
 {
-    Sprite *sprite = ArenaPushStruct(arena, Sprite);
     sprite->atlas = atlas;
     sprite->frames = TextureAtlasIndicesGetFrames(atlas, name);
     sprite->currentFrame = 0;
@@ -220,8 +219,6 @@ Sprite *SpriteFromAtlas(Arena *arena, TextureAtlas *atlas, String *name)
     sprite->rotation = 0;
     sprite->flipX = false;
     sprite->flipY = false;
-
-    return sprite;
 }
 
 void SpriteDraw(Sprite *sprite, SDL_Renderer *renderer)

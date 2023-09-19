@@ -61,7 +61,7 @@ void StringBuilderAppend(StringBuilder *sb, String string)
 
 int StringCompare(String *string1, String *string2)
 {
-    return strncmp(string1->ptr, string2->ptr, MIN((int)string1->len, (int)string2->len));
+    return strncmp(string1->ptr, string2->ptr, string2->len);
 }
 
 void StringBuilderClear(StringBuilder *sb)
