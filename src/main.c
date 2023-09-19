@@ -12,7 +12,7 @@
 
 static int windowWidth = 0;
 static int windowHeight = 0;
-static f32 gravity = 0.00f;
+static f32 gravity = 0.05f;
 
 typedef struct Controllable
 {
@@ -284,38 +284,26 @@ Vec2 CollisionOverlapStatic(Sprite *a, SDL_Rect *b)
         a->pos.y < b->y + b->h &&
         a->pos.y + aRect.h > b->y)
     {
-        // printf("collision\n");
-
-        // Calculate the overlap
-        if (a->pos.x < b->x + b->w &&
-            a->pos.x + aRect.w > b->x)
+        // Left
+        if (a->pos.x < b->x + b->w && a->pos.x > b->x)
         {
-            // printf("x overlap\n");
-            if (a->pos.x < b->x)
-            {
-                // printf("left\n");
-                result.x = a->pos.x + aRect.w - b->x;
-            }
-            else
-            {
-                // printf("right\n");
-                result.x = b->x + b->w - a->pos.x;
-            }
+            result.x = b->x + b->w - a->pos.x;
         }
-        if (a->pos.y < b->y + b->h &&
-            a->pos.y + aRect.h > b->y)
+        // Right
+        else if (a->pos.x + aRect.w > b->x && a->pos.x + aRect.w < b->x + b->w)
         {
-            // printf("y overlap\n");
-            if (a->pos.y < b->y)
-            {
-                // printf("top\n");
-                result.y = a->pos.y + aRect.h - b->y;
-            }
-            else
-            {
-                // printf("bottom\n");
-                result.y = b->y + b->h - a->pos.y;
-            }
+            result.x = b->x - (a->pos.x + aRect.w);
+        }
+
+        // Top
+        if (a->pos.y < b->y + b->h && a->pos.y > b->y)
+        {
+            result.y = b->y + b->h - a->pos.y;
+        }
+        // Bottom
+        else if (a->pos.y + aRect.h > b->y && a->pos.y + aRect.h < b->y + b->h)
+        {
+            result.y = b->y - (a->pos.y + aRect.h);
         }
     }
 
@@ -541,21 +529,16 @@ int main(void)
         }
 
         // Resolve collisions with walls
-        for (int i = 0; i < 4; i++)
-        {
-            SDL_Rect wallRect = {
-                walls[i].position.x,
-                walls[i].position.y,
-                wallSprite.frames.ptr[wallSprite.currentFrame].w,
-                wallSprite.frames.ptr[wallSprite.currentFrame].h};
+        // for (int i = 0; i < 4; i++)
+        // {
+        //     SDL_Rect wallRect = {
+        //         walls[i].position.x,
+        //         walls[i].position.y,
+        //         wallSprite.frames.ptr[wallSprite.currentFrame].w,
+        //         wallSprite.frames.ptr[wallSprite.currentFrame].h};
 
-            Vec2 overlap = CollisionOverlapStatic(&player.sprite, &wallRect);
-
-            if (overlap.x != 0 || overlap.y != 0)
-            {
-                printf("overlap: %f, %f\n", overlap.x, overlap.y);
-            }
-        }
+        //     Vec2 overlap = CollisionOverlapStatic(&player.sprite, &wallRect);
+        // }
 
         // Update the player
         ControllableUpdate(&playerControl, controller);
