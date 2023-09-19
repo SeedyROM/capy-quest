@@ -568,6 +568,8 @@ int main(void)
         // Draw the coins
         for (int i = 0; i < coinList.count; i++)
         {
+            // TODO(SeedyROM): This data should be iterated over the actual memory block
+            // instead of the references.
             Coin *coin = EntityListGetEntity(&coinList, i + 1);
             CoinDraw(coin, renderer);
             CoinUpdate(coin);
@@ -590,6 +592,18 @@ int main(void)
         SDL_Delay(16);
 
         time++;
+    }
+
+    // Clear the coins entity list
+    EntityListClear(&coinList);
+
+    // Free the texture atlas
+    TextureAtlasFree(textureAtlas);
+
+    // Close the controller
+    if (controller != NULL)
+    {
+        SDL_GameControllerClose(controller);
     }
 
     // Shutdown SDL
