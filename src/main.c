@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdbool.h>
+#include <string.h>
 
 #include <SDL2/SDL.h>
 
@@ -50,11 +51,7 @@ void PlayerControl(Controllable *controllable, SDL_GameController *controller)
 {
     bool isUpPressed = false;
 
-    Vec2 *position = controllable->position;
     Vec2 *velocity = controllable->velocity;
-
-    // Gravity
-    velocity->y += gravity;
 
     const f32 maxSpeed = 2.0;
     // Move with arrow keys
@@ -143,14 +140,14 @@ void PlayerControl(Controllable *controllable, SDL_GameController *controller)
         if (state[SDL_SCANCODE_LEFT])
         {
             if (velocity->x > -maxSpeed)
-                velocity->x -= 0.09f;
+                velocity->x -= 0.05f;
             else if (velocity->x < -maxSpeed)
                 velocity->x = -maxSpeed;
         }
         if (state[SDL_SCANCODE_RIGHT])
         {
             if (velocity->x < maxSpeed)
-                velocity->x += 0.09f;
+                velocity->x += 0.05f;
             else if (velocity->x > maxSpeed)
                 velocity->x = maxSpeed;
         }
@@ -183,6 +180,10 @@ void PlayerControl(Controllable *controllable, SDL_GameController *controller)
 void PlayerUpdate(Player *player)
 {
     Sprite *sprite = player->sprite;
+    Vec2 *velocity = &player->velocity;
+
+    // Gravity
+    velocity->y += gravity;
 
     // Flip the sprite
     if (player->velocity.x < 0)
@@ -225,6 +226,157 @@ void PlayerUpdate(Player *player)
 void PlayerDraw(Player *player, SDL_Renderer *renderer)
 {
     SpriteDraw(player->sprite, renderer);
+}
+
+typedef struct EntityRef
+{
+    u16 id;
+    void *entity;
+    struct EntityRef *next;
+} EntityRef;
+
+typedef struct EntityList
+{
+    u16 count;
+    u16 capacity;
+    EntityRef *refs;
+    usize entitySize;
+    void *entities;
+    void *lastEntity;
+} EntityList;
+
+void EntityListInit(Arena *arena, EntityList *list, usize entitySize, u16 capacity)
+{
+    list->count = 0;
+    list->capacity = capacity;
+    list->refs = ArenaPushArray(arena, capacity, EntityRef);
+    list->entitySize = entitySize;
+    list->entities = ArenaPushArray(arena, entitySize * capacity, u8);
+    list->lastEntity = list->entities;
+}
+
+void EntityListFree(EntityList *list)
+{
+    free(list->refs);
+    free(list->entities);
+}
+
+EntityRef *EntityListAdd(EntityList *list, void *entity)
+{
+    if (list->count == list->capacity)
+    {
+        printf("EntityListAdd: list is full\n");
+        return NULL;
+    }
+
+    // Add the reference to the list
+    EntityRef *ref = list->refs + list->count;
+    ref->id = list->count + 1;
+    ref->entity = list->entities + (list->count * list->entitySize);
+    ref->next = NULL;
+
+    // Copy the entity into the list
+    memcpy(ref->entity, entity, list->entitySize);
+
+    list->lastEntity = entity;
+    list->count++;
+
+    return ref;
+}
+
+void EntityListRemove(EntityList *list, EntityRef *ref)
+{
+    if (ref->id == list->count)
+    {
+        list->count--;
+        return;
+    }
+
+    EntityRef *lastRef = list->refs + list->count - 1;
+    EntityRef *nextRef = ref->next;
+
+    ref->id = lastRef->id;
+    ref->entity = lastRef->entity;
+    ref->next = nextRef;
+
+    // Copy the last entity into the removed entity
+    memcpy(ref->entity, lastRef->entity, list->entitySize);
+
+    lastRef->id = 0;
+    lastRef->entity = NULL;
+    lastRef->next = NULL;
+
+    list->count--;
+
+    if (nextRef != NULL)
+    {
+        nextRef->id = ref->id;
+    }
+
+    if (list->count == 0)
+    {
+        list->lastEntity = list->entities;
+    }
+}
+
+void EntityListRemoveAtIndex(EntityList *list, u16 index)
+{
+}
+
+EntityRef *EntityListGet(EntityList *list, u16 id)
+{
+    if (id < 1 || id > list->count)
+    {
+        return NULL;
+    }
+
+    return list->refs + id - 1;
+}
+
+void *EntityListGetEntity(EntityList *list, u16 id)
+{
+    EntityRef *ref = EntityListGet(list, id);
+    if (ref == NULL)
+    {
+        return NULL;
+    }
+
+    return ref->entity;
+}
+
+bool IsCollision(Sprite *a, Sprite *b)
+{
+    SDL_Rect aRect = a->frames.ptr[a->currentFrame];
+    SDL_Rect bRect = b->frames.ptr[b->currentFrame];
+
+    if (a->pos.x < b->pos.x + bRect.w &&
+        a->pos.x + aRect.w > b->pos.x &&
+        a->pos.y < b->pos.y + bRect.h &&
+        a->pos.y + aRect.h > b->pos.y)
+    {
+        return true;
+    }
+
+    return false;
+}
+
+Vec2 CollisionOverlap(Sprite *a, Sprite *b)
+{
+    Vec2 overlap = {0, 0};
+
+    SDL_Rect aRect = a->frames.ptr[a->currentFrame];
+    SDL_Rect bRect = b->frames.ptr[b->currentFrame];
+
+    if (a->pos.x < b->pos.x + bRect.w &&
+        a->pos.x + aRect.w > b->pos.x &&
+        a->pos.y < b->pos.y + bRect.h &&
+        a->pos.y + aRect.h > b->pos.y)
+    {
+        overlap.x = a->pos.x - b->pos.x;
+        overlap.y = a->pos.y - b->pos.y;
+    }
+
+    return overlap;
 }
 
 int main(void)
@@ -305,12 +457,22 @@ int main(void)
 
     // Setup the player
     Controllable playerControl;
-    ControllableInit(&playerControl, player.sprite, &player.velocity, &PlayerControl);
+    ControllableInit(&playerControl, &player.sprite->pos, &player.velocity, &PlayerControl);
 
-    // Make a coin sprite
-    Sprite *coinSprite = SpriteFromAtlas(arena, textureAtlas, &STR("coin"));
-    coinSprite->pos.x = 50;
-    coinSprite->pos.y = 50;
+    // Coin entity list
+    EntityList coinList;
+    EntityListInit(arena, &coinList, sizeof(Sprite), 32);
+
+    // Add some coins
+    for (int i = 0; i < 32; i++)
+    {
+        Sprite *coinSprite = SpriteFromAtlas(arena, textureAtlas, &STR("coin"));
+        Sprite *coin = EntityListAdd(&coinList, coinSprite)->entity;
+
+        // Put a coin randomly on the screen
+        coin->pos.x = rand() % windowWidth;
+        coin->pos.y = rand() % windowHeight;
+    }
 
     // Dumb timer
     u64 time = 0;
@@ -351,21 +513,36 @@ int main(void)
             SpriteNextFrame(player.sprite);
         }
 
-        if (time % 10 == 0)
-        {
-            SpriteNextFrame(coinSprite);
-        }
-
         // Update the player
         ControllableUpdate(&playerControl, controller);
         PlayerUpdate(&player);
+
+        // Handle coin collisions
+        for (int i = 0; i < coinList.count; i++)
+        {
+            Sprite *coin = EntityListGetEntity(&coinList, i + 1);
+            if (IsCollision(player.sprite, coin))
+            {
+                EntityListRemoveAtIndex(&coinList, i);
+            }
+        }
 
         // Clear the screen
         SDL_SetRenderDrawColor(renderer, 0, 128, 200, 255);
         SDL_RenderClear(renderer);
 
+        // Draw the coins
+        for (int i = 0; i < coinList.count; i++)
+        {
+            Sprite *coin = EntityListGetEntity(&coinList, i + 1);
+            if (time % 10 == 0)
+            {
+                SpriteNextFrame(coin);
+            }
+            SpriteDraw(coin, renderer);
+        }
+
         PlayerDraw(&player, renderer);
-        SpriteDraw(coinSprite, renderer);
 
         // Update the screen
         SDL_RenderPresent(renderer);
