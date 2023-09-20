@@ -281,60 +281,6 @@ bool IsCollision(Sprite *a, Sprite *b)
     return true;
 }
 
-Vec2 CollisionOverlap(Sprite *a, SDL_Rect *b)
-{
-    SDL_Rect aRect = a->frames.ptr[a->currentFrame];
-    aRect.x = a->pos.x;
-    aRect.y = a->pos.y;
-
-    Vec2 nullResult = (Vec2){0.0f, 0.0f};
-    float xOverlap = 0.0f, yOverlap = 0.0f;
-
-    // Test X direction.
-    if (aRect.x + aRect.w < b->x || b->x + b->w < aRect.x)
-    {
-        return nullResult;
-    }
-    else
-    {
-        // get center X's of this and other rectangle
-        float thisCenterX = aRect.x + aRect.w / 2;
-        float otherCenterX = b->x + b->w / 2;
-
-        if (thisCenterX < otherCenterX)
-        {
-            xOverlap = (aRect.x + aRect.w - b->x);
-        }
-        else
-        {
-            xOverlap = (b->x + b->w - aRect.x) * -1;
-        }
-    }
-
-    // Test Y direction.
-    if (aRect.y + aRect.h < b->y || b->y + b->h < aRect.y)
-    {
-        return nullResult;
-    }
-    else
-    {
-        // get center Y's of this and other rectangle
-        float thisCenterY = aRect.y + aRect.h / 2;
-        float otherCenterY = b->y + b->h / 2;
-
-        if (thisCenterY < otherCenterY)
-        {
-            yOverlap = (aRect.y + aRect.h - b->y);
-        }
-        else
-        {
-            yOverlap = (b->y + b->h - aRect.y) * -1;
-        }
-    }
-
-    return (Vec2){xOverlap, yOverlap};
-}
-
 typedef struct Coin
 {
     TextureAtlas *atlas;
@@ -500,9 +446,9 @@ int main(void)
         {1, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1},
         {1, 0, 0, 1, 1, 1, 1, 0, 0, 2, 0, 0, 0, 1, 0, 1},
         {1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 1},
-        {1, 0, 1, 0, 0, 0, 1, 0, 2, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 1},
-        {1, 2, 2, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 1},
+        {1, 0, 1, 0, 0, 0, 1, 0, 2, 0, 1, 0, 0, 0, 0, 1},
+        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+        {1, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
         {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
     };
 
@@ -590,8 +536,8 @@ int main(void)
         PlayerUpdate(&player);
 
         SDL_Rect playerRect = player.sprite.frames.ptr[player.sprite.currentFrame];
-        playerRect.x = player.sprite.pos.x;
-        playerRect.y = player.sprite.pos.y;
+        playerRect.x = (int)player.sprite.pos.x;
+        playerRect.y = (int)player.sprite.pos.y;
 
         // Resolve collisions with walls
         for (int i = 0; i < wallCount; i++)
@@ -658,11 +604,12 @@ int main(void)
 
             if (lastPlayerRect.x >= wallRect.x + wallRect.w)
             {
+                // WTF IS THIS 0.5??? Is it the float to integer casting?
                 // If the sprite is now inside the platform
-                if (playerRect.x <= wallRect.x + wallRect.w)
+                if (playerRect.x <= wallRect.x + wallRect.w + 0.5)
                 {
                     // Move the sprite right
-                    player.sprite.pos.x = wallRect.x + wallRect.w;
+                    player.sprite.pos.x = wallRect.x + wallRect.w + 0.5;
                     player.velocity.x = 0;
                 }
             }
