@@ -155,9 +155,6 @@ void PlayerControl(Controllable *controllable, SDL_GameController *controller)
             }
         }
 
-        // Jump
-        // if (yAxis < 0)
-        // {
         isUpPressed = SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_A);
 
         if (isUpPressed)
@@ -165,7 +162,6 @@ void PlayerControl(Controllable *controllable, SDL_GameController *controller)
             velocity->y = -1.4;
             isUpPressed = false;
         }
-        // }
     }
     else
     {
@@ -626,7 +622,8 @@ int main(void)
                     player.grounded = true;
                 }
             }
-            else if (lastPlayerRect.y >= wallRect.y + wallRect.h)
+
+            if (lastPlayerRect.y >= wallRect.y + wallRect.h)
             {
                 // If the sprite is now inside the platform
                 if (playerRect.y < wallRect.y + wallRect.h)
@@ -658,10 +655,11 @@ int main(void)
                     player.velocity.x = 0;
                 }
             }
-            else if (lastPlayerRect.x >= wallRect.x + wallRect.w)
+
+            if (lastPlayerRect.x >= wallRect.x + wallRect.w)
             {
                 // If the sprite is now inside the platform
-                if (playerRect.x < wallRect.x + wallRect.w)
+                if (playerRect.x <= wallRect.x + wallRect.w)
                 {
                     // Move the sprite right
                     player.sprite.pos.x = wallRect.x + wallRect.w;
