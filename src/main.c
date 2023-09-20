@@ -18,14 +18,16 @@ typedef struct Controllable
 {
     Vec2 *position;
     Vec2 *velocity;
+    bool *grounded;
 
     void (*update)(struct Controllable *controllable, SDL_GameController *controller);
 } Controllable;
 
-void ControllableInit(Controllable *controllable, Vec2 *position, Vec2 *velocity, void (*update)(Controllable *controllable, SDL_GameController *controller))
+void ControllableInit(Controllable *controllable, Vec2 *position, Vec2 *velocity, bool *grounded, void (*update)(Controllable *controllable, SDL_GameController *controller))
 {
     controllable->position = position;
     controllable->velocity = velocity;
+    controllable->grounded = grounded;
     controllable->update = update;
 }
 
@@ -167,7 +169,6 @@ void PlayerControl(Controllable *controllable, SDL_GameController *controller)
     }
     else
     {
-
         if (state[SDL_SCANCODE_LEFT])
         {
             if (velocity->x > -maxSpeed)
@@ -486,7 +487,7 @@ int main(void)
 
     // Setup the player
     Controllable playerControl;
-    ControllableInit(&playerControl, &player.sprite.pos, &player.velocity, &PlayerControl);
+    ControllableInit(&playerControl, &player.sprite.pos, &player.velocity, &player.grounded, &PlayerControl);
 
     // Coin entity list
     EntityList coinList;
@@ -546,20 +547,6 @@ int main(void)
             }
         }
     }
-
-    // // Add some coins
-    // for (int i = 0; i < 32; i++)
-    // {
-    //     // Create a coin sprite, don't alloc.
-    //     Coin coin;
-    //     CoinInit(&coin, textureAtlas);
-
-    //     // Put a coin randomly on the screen
-    //     coin.sprite.pos.x = rand() % windowWidth;
-    //     coin.sprite.pos.y = rand() % windowHeight;
-
-    //     EntityListAdd(&coinList, &coin);
-    // }
 
     SDL_Rect lastPlayerRect = {0, 0, 0, 0};
 
@@ -647,6 +634,38 @@ int main(void)
                     // Move the sprite down
                     player.sprite.pos.y = wallRect.y + wallRect.h;
                     player.velocity.y = 0;
+                }
+            }
+
+            // Update the player rect
+            playerRect.x = player.sprite.pos.x;
+            playerRect.y = player.sprite.pos.y;
+
+            // If we're still colliding, try to resolve the X axis
+            if (!SDL_IntersectRect(&playerRect, &wallRect, &overlap))
+            {
+                continue;
+            }
+
+            // If the sprite was previous to the left of the platform
+            if (lastPlayerRect.x + lastPlayerRect.w <= wallRect.x)
+            {
+                // If the sprite is now inside the platform
+                if (playerRect.x + playerRect.w > wallRect.x)
+                {
+                    // Move the sprite left
+                    player.sprite.pos.x = wallRect.x - playerRect.w;
+                    player.velocity.x = 0;
+                }
+            }
+            else if (lastPlayerRect.x >= wallRect.x + wallRect.w)
+            {
+                // If the sprite is now inside the platform
+                if (playerRect.x < wallRect.x + wallRect.w)
+                {
+                    // Move the sprite right
+                    player.sprite.pos.x = wallRect.x + wallRect.w;
+                    player.velocity.x = 0;
                 }
             }
         }
