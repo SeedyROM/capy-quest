@@ -1,0 +1,3 @@
+## TODOS: (9/20/23)
+
+- [ ] Replace collision `SDL_Rects` with `SDL_FRects` because implicit casting is a bitch...
