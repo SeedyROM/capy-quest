@@ -10,12 +10,6 @@ void EntityListInit(Arena *arena, EntityList *list, usize entitySize, u16 capaci
     list->lastEntity = list->entities;
 }
 
-void EntityListFree(EntityList *list)
-{
-    free(list->refs);
-    free(list->entities);
-}
-
 EntityRef *EntityListAdd(EntityList *list, void *entity)
 {
     if (list->count == list->capacity)
@@ -105,4 +99,10 @@ void *EntityListGetEntity(EntityList *list, u16 id)
     }
 
     return ref->entity;
+}
+
+void EntityListClear(EntityList *list)
+{
+    list->count = 0;
+    list->lastEntity = list->entities;
 }

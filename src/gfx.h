@@ -34,6 +34,7 @@ TextureAtlas *TextureAtlasCreate(Arena *arena);
 int TextureAtlasLoadSprites(SDL_Renderer *renderer, TextureAtlas *atlas, String *path);
 i64 TextureAtlasIndicesGetIndex(TextureAtlas *atlas, String *name);
 TextureAtlasFrames TextureAtlasIndicesGetFrames(TextureAtlas *atlas, String *name);
+void TextureAtlasFree(TextureAtlas *atlas);
 
 typedef struct Sprite
 {

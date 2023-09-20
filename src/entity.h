@@ -25,9 +25,9 @@ typedef struct EntityList
 } EntityList;
 
 void EntityListInit(Arena *arena, EntityList *list, usize entitySize, u16 capacity);
-void EntityListFree(EntityList *list);
 EntityRef *EntityListAdd(EntityList *list, void *entity);
 void EntityListRemove(EntityList *list, EntityRef *ref);
 void EntityListRemoveAtIndex(EntityList *list, u16 index);
 EntityRef *EntityListGet(EntityList *list, u16 id);
 void *EntityListGetEntity(EntityList *list, u16 id);
+void EntityListClear(EntityList *list);

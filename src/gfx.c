@@ -209,6 +209,11 @@ TextureAtlasFrames TextureAtlasIndicesGetFrames(TextureAtlas *atlas, String *nam
     return foundFrames;
 }
 
+void TextureAtlasFree(TextureAtlas *atlas)
+{
+    SDL_DestroyTexture(atlas->texture);
+}
+
 void SpriteFromAtlas(Sprite *sprite, TextureAtlas *atlas, String *name)
 {
     sprite->atlas = atlas;
