@@ -38,12 +38,14 @@ typedef struct Player
 {
     Sprite sprite;
     Vec2 velocity;
+    bool grounded;
 } Player;
 
 void PlayerInit(Player *player, TextureAtlas *atlas, String *name)
 {
     SpriteFromAtlas(&player->sprite, atlas, name);
     player->velocity = (Vec2){0, 0};
+    player->grounded = false;
 }
 
 void PlayerControl(Controllable *controllable, SDL_GameController *controller)
@@ -158,7 +160,7 @@ void PlayerControl(Controllable *controllable, SDL_GameController *controller)
 
         if (isUpPressed)
         {
-            velocity->y = -1.2;
+            velocity->y = -1.4;
             isUpPressed = false;
         }
         // }
@@ -201,7 +203,7 @@ void PlayerControl(Controllable *controllable, SDL_GameController *controller)
         // Jump
         if (state[SDL_SCANCODE_UP])
         {
-            velocity->y = -1.2;
+            velocity->y = -1.4;
         }
     }
 }
@@ -212,7 +214,8 @@ void PlayerUpdate(Player *player)
     Vec2 *velocity = &player->velocity;
 
     // Gravity
-    velocity->y += gravity;
+    if (!player->grounded)
+        velocity->y += gravity;
 
     // Flip the sprite
     if (player->velocity.x < 0)
@@ -262,52 +265,77 @@ bool IsCollision(Sprite *a, Sprite *b)
     SDL_Rect aRect = a->frames.ptr[a->currentFrame];
     SDL_Rect bRect = b->frames.ptr[b->currentFrame];
 
-    if (a->pos.x < b->pos.x + bRect.w &&
-        a->pos.x + aRect.w > b->pos.x &&
-        a->pos.y < b->pos.y + bRect.h &&
-        a->pos.y + aRect.h > b->pos.y)
+    // Use the center of the sprite for collision detection
+    aRect.x = a->pos.x + (aRect.w / 2);
+    aRect.y = a->pos.y + (aRect.h / 2);
+    bRect.x = b->pos.x + (bRect.w / 2);
+    bRect.y = b->pos.y + (bRect.h / 2);
+
+    if (aRect.x + aRect.w < bRect.x || bRect.x + bRect.w < aRect.x)
     {
-        return true;
+        return false;
     }
 
-    return false;
+    if (aRect.y + aRect.h < bRect.y || bRect.y + bRect.h < aRect.y)
+    {
+        return false;
+    }
+
+    return true;
 }
 
-Vec2 CollisionOverlapStatic(Sprite *a, SDL_Rect *b)
+Vec2 CollisionOverlap(Sprite *a, SDL_Rect *b)
 {
     SDL_Rect aRect = a->frames.ptr[a->currentFrame];
+    aRect.x = a->pos.x;
+    aRect.y = a->pos.y;
 
-    Vec2 result = {0, 0};
+    Vec2 nullResult = (Vec2){0.0f, 0.0f};
+    float xOverlap = 0.0f, yOverlap = 0.0f;
 
-    if (a->pos.x < b->x + b->w &&
-        a->pos.x + aRect.w > b->x &&
-        a->pos.y < b->y + b->h &&
-        a->pos.y + aRect.h > b->y)
+    // Test X direction.
+    if (aRect.x + aRect.w < b->x || b->x + b->w < aRect.x)
     {
-        // Left
-        if (a->pos.x < b->x + b->w && a->pos.x > b->x)
-        {
-            result.x = b->x + b->w - a->pos.x;
-        }
-        // Right
-        else if (a->pos.x + aRect.w > b->x && a->pos.x + aRect.w < b->x + b->w)
-        {
-            result.x = b->x - (a->pos.x + aRect.w);
-        }
+        return nullResult;
+    }
+    else
+    {
+        // get center X's of this and other rectangle
+        float thisCenterX = aRect.x + aRect.w / 2;
+        float otherCenterX = b->x + b->w / 2;
 
-        // Top
-        if (a->pos.y < b->y + b->h && a->pos.y > b->y)
+        if (thisCenterX < otherCenterX)
         {
-            result.y = b->y + b->h - a->pos.y;
+            xOverlap = (aRect.x + aRect.w - b->x);
         }
-        // Bottom
-        else if (a->pos.y + aRect.h > b->y && a->pos.y + aRect.h < b->y + b->h)
+        else
         {
-            result.y = b->y - (a->pos.y + aRect.h);
+            xOverlap = (b->x + b->w - aRect.x) * -1;
         }
     }
 
-    return result;
+    // Test Y direction.
+    if (aRect.y + aRect.h < b->y || b->y + b->h < aRect.y)
+    {
+        return nullResult;
+    }
+    else
+    {
+        // get center Y's of this and other rectangle
+        float thisCenterY = aRect.y + aRect.h / 2;
+        float otherCenterY = b->y + b->h / 2;
+
+        if (thisCenterY < otherCenterY)
+        {
+            yOverlap = (aRect.y + aRect.h - b->y);
+        }
+        else
+        {
+            yOverlap = (b->y + b->h - aRect.y) * -1;
+        }
+    }
+
+    return (Vec2){xOverlap, yOverlap};
 }
 
 typedef struct Coin
@@ -411,7 +439,7 @@ int main(void)
     }
 
     // Window scale factor
-    int windowScaleFactor = 6;
+    int windowScaleFactor = 4;
 
     // Get the window size
     int windowRealWidth = 0;
@@ -468,26 +496,72 @@ int main(void)
     Sprite wallSprite;
     SpriteFromAtlas(&wallSprite, textureAtlas, &STR("rock"));
 
-    // Create some walls
-    Wall walls[5];
-    for (int i = 0; i < 5; i++)
+    int map[32][16] = {
+        {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 1},
+        {1, 3, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 2, 1},
+        {1, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1},
+        {1, 0, 0, 1, 1, 1, 1, 0, 0, 2, 0, 0, 0, 1, 0, 1},
+        {1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 1},
+        {1, 0, 1, 0, 0, 0, 1, 0, 2, 0, 0, 0, 0, 0, 0, 1},
+        {1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 1},
+        {1, 2, 2, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 1},
+        {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+    };
+
+    Wall walls[128];
+    int wallCount = 0;
+
+    // Add the objects to the map
+    for (int y = 0; y < 32; y++)
     {
-        WallInit(&walls[i], (Vec2){32 + (i * 16), 64 - 8});
+        for (int x = 0; x < 16; x++)
+        {
+            int tile = map[y][x];
+            if (tile == 1)
+            {
+                Wall wall;
+                WallInit(&wall, (Vec2){x * 16, y * 16});
+                walls[wallCount] = wall;
+                wallCount++;
+            }
+
+            if (tile == 2)
+            {
+                // Create a coin sprite, don't alloc.
+                Coin coin;
+                CoinInit(&coin, textureAtlas);
+
+                // Put a coin randomly on the screen
+                coin.sprite.pos.x = x * 16 + 4;
+                coin.sprite.pos.y = y * 16 + 4;
+
+                EntityListAdd(&coinList, &coin);
+            }
+
+            if (tile == 3)
+            {
+                player.sprite.pos.x = x * 16;
+                player.sprite.pos.y = y * 16;
+            }
+        }
     }
 
-    // Add some coins
-    for (int i = 0; i < 32; i++)
-    {
-        // Create a coin sprite, don't alloc.
-        Coin coin;
-        CoinInit(&coin, textureAtlas);
+    // // Add some coins
+    // for (int i = 0; i < 32; i++)
+    // {
+    //     // Create a coin sprite, don't alloc.
+    //     Coin coin;
+    //     CoinInit(&coin, textureAtlas);
 
-        // Put a coin randomly on the screen
-        coin.sprite.pos.x = rand() % windowWidth;
-        coin.sprite.pos.y = rand() % windowHeight;
+    //     // Put a coin randomly on the screen
+    //     coin.sprite.pos.x = rand() % windowWidth;
+    //     coin.sprite.pos.y = rand() % windowHeight;
 
-        EntityListAdd(&coinList, &coin);
-    }
+    //     EntityListAdd(&coinList, &coin);
+    // }
+
+    SDL_Rect lastPlayerRect = {0, 0, 0, 0};
 
     // Dumb timer
     u64 time = 0;
@@ -528,21 +602,54 @@ int main(void)
             SpriteNextFrame(&player.sprite);
         }
 
-        // Resolve collisions with walls
-        // for (int i = 0; i < 4; i++)
-        // {
-        //     SDL_Rect wallRect = {
-        //         walls[i].position.x,
-        //         walls[i].position.y,
-        //         wallSprite.frames.ptr[wallSprite.currentFrame].w,
-        //         wallSprite.frames.ptr[wallSprite.currentFrame].h};
-
-        //     Vec2 overlap = CollisionOverlapStatic(&player.sprite, &wallRect);
-        // }
-
         // Update the player
         ControllableUpdate(&playerControl, controller);
         PlayerUpdate(&player);
+
+        SDL_Rect playerRect = player.sprite.frames.ptr[player.sprite.currentFrame];
+        playerRect.x = player.sprite.pos.x;
+        playerRect.y = player.sprite.pos.y;
+
+        // Resolve collisions with walls
+        for (int i = 0; i < wallCount; i++)
+        {
+            Wall wall = walls[i];
+
+            SDL_Rect wallRect = wallSprite.frames.ptr[wallSprite.currentFrame];
+            wallRect.x = wall.position.x;
+            wallRect.y = wall.position.y;
+
+            SDL_Rect overlap = {0, 0, 0, 0};
+
+            if (!SDL_IntersectRect(&playerRect, &wallRect, &overlap))
+            {
+                player.grounded = false;
+                continue;
+            }
+
+            // If the sprite was previous above the platform
+            if (lastPlayerRect.y + lastPlayerRect.h <= wallRect.y)
+            {
+                // If the sprite is now inside the platform
+                if (playerRect.y + playerRect.h > wallRect.y)
+                {
+                    // Move the sprite up
+                    player.sprite.pos.y = wallRect.y - playerRect.h;
+                    player.velocity.y = 0;
+                    player.grounded = true;
+                }
+            }
+            else if (lastPlayerRect.y >= wallRect.y + wallRect.h)
+            {
+                // If the sprite is now inside the platform
+                if (playerRect.y < wallRect.y + wallRect.h)
+                {
+                    // Move the sprite down
+                    player.sprite.pos.y = wallRect.y + wallRect.h;
+                    player.velocity.y = 0;
+                }
+            }
+        }
 
         // Handle coin collisions
         for (int i = 0; i < coinList.count; i++)
@@ -560,6 +667,8 @@ int main(void)
                 CoinCollect(coin);
             }
         }
+
+        lastPlayerRect = playerRect;
 
         // Clear the screen
         SDL_SetRenderDrawColor(renderer, 0, 128, 200, 255);
@@ -579,7 +688,7 @@ int main(void)
         PlayerDraw(&player, renderer);
 
         // Draw the walls
-        for (int i = 0; i < 4; i++)
+        for (int i = 0; i < wallCount; i++)
         {
             wallSprite.pos = walls[i].position;
             SpriteDraw(&wallSprite, renderer);
