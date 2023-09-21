@@ -18,13 +18,12 @@ void CoinCollect(Coin *coin)
     if (coin->collected)
         return;
 
+    coin->time = 0;
+    coin->currentFrame = 0;
     coin->collected = true;
+    coin->frameDuration = 3;
 
     SpriteChange(&coin->sprite, &STR("coin_collected"));
-    coin->currentFrame = 0;
-
-    coin->frameDuration = 1;
-    coin->time = 0;
 }
 
 void CoinUpdate(Coin *coin)
@@ -32,7 +31,7 @@ void CoinUpdate(Coin *coin)
     if (coin->collected)
     {
         coin->collectedTime += 1;
-        if (coin->collectedTime > 30)
+        if (coin->collectedTime > 18)
         {
             coin->delete = true;
         }

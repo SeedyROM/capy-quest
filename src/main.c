@@ -150,9 +150,9 @@ int main(void)
     bool running = true;
     while (running)
     {
-
         while (SDL_PollEvent(&event))
         {
+            // Quit this fucker
             if (event.type == SDL_QUIT)
             {
                 running = false;
@@ -161,9 +161,11 @@ int main(void)
             // Add the controller if it's plugged in
             if (event.type == SDL_CONTROLLERDEVICEADDED)
             {
+                printf("Attempting to add controller\n");
                 controller = SDL_GameControllerOpen(0);
                 if (controller == NULL)
                 {
+                    printf("Failed to add controller\n");
                     fprintf(stderr, "SDL_JoystickOpen Error: %s\n", SDL_GetError());
                 }
             }
@@ -171,11 +173,13 @@ int main(void)
             // Remove the controller if it's unplugged
             if (event.type == SDL_CONTROLLERDEVICEREMOVED)
             {
+                printf("Controller disconnected\n");
                 SDL_GameControllerClose(controller);
                 controller = NULL;
             }
         }
 
+        // This is awful but update the player sprite
         if (time % 20 == 0)
         {
             SpriteNextFrame(&player.sprite);
