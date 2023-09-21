@@ -13,7 +13,7 @@ typedef struct Player
     bool grounded;
 } Player;
 
-void PlayerInit(Player *player, TextureAtlas *atlas, String *name);
+void PlayerInit(Player *player, Sprite *sprite);
 void PlayerControl(Controllable *controllable, SDL_GameController *controller);
 void PlayerUpdate(Player *player, f32 gravity);
 void PlayerDraw(Player *player, SDL_Renderer *renderer);

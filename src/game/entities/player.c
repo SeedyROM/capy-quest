@@ -1,8 +1,8 @@
 #include "player.h"
 
-void PlayerInit(Player *player, TextureAtlas *atlas, String *name)
+void PlayerInit(Player *player, Sprite *sprite)
 {
-    SpriteFromAtlas(&player->sprite, atlas, name);
+    player->sprite = *sprite;
     player->velocity = (Vec2){0, 0};
     player->grounded = false;
 }

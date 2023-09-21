@@ -8,8 +8,6 @@
 #include "game/behaviours.h"
 #include "std/entity.h"
 
-static int windowWidth = 0;
-static int windowHeight = 0;
 static f32 gravity = 0.05f;
 
 typedef struct Camera
@@ -43,10 +41,18 @@ bool IsCollision(Sprite *a, Sprite *b)
     return true;
 }
 
-int main(void)
+typedef struct Game
 {
-    Arena *arena = ArenaAlloc(128 * Megabyte);
+    SDL_Window *window;
+    SDL_Renderer *renderer;
+    u16 windowWidth;
+    u16 windowHeight;
+    SDL_GameController *controller;
+    Camera camera;
+} Game;
 
+int GameInit(Game *game)
+{
     // Initialize SDL
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER) != 0)
     {
@@ -83,18 +89,28 @@ int main(void)
     SDL_GetWindowSize(window, &windowRealWidth, &windowRealHeight);
 
     // Get the scaled window size
-    windowWidth = windowRealWidth / windowScaleFactor;
-    windowHeight = windowRealHeight / windowScaleFactor;
+    game->windowWidth = windowRealWidth / windowScaleFactor;
+    game->windowHeight = windowRealHeight / windowScaleFactor;
 
     // Set the logical size of the renderer
-    SDL_RenderSetLogicalSize(renderer, windowWidth, windowHeight);
+    SDL_RenderSetLogicalSize(renderer, game->windowWidth, game->windowHeight);
 
-    // Setup the joystick
-    SDL_GameController *controller = NULL;
+    game->window = window;
+    game->renderer = renderer;
+    game->controller = NULL;
+
+    return 0;
+}
+
+int GameLoadDefaultController(Game *game)
+{
+    SDL_GameController *controller = game->controller;
+
     // Load the joystick mapping
     if (SDL_GameControllerAddMappingsFromFile("../assets/gamecontrollerdb.txt") == -1)
     {
         fprintf(stderr, "SDL_GameControllerAddMappingsFromFile Error: %s\n", SDL_GetError());
+        return 1;
     }
     // Print how many joysticks are connected
     printf("Number of joysticks connected: %d\n", SDL_NumJoysticks());
@@ -104,6 +120,7 @@ int main(void)
         if (controller == NULL)
         {
             fprintf(stderr, "SDL_JoystickOpen Error: %s\n", SDL_GetError());
+            return 1;
         }
     }
 
@@ -111,10 +128,51 @@ int main(void)
     {
         // Print the joystick name
         printf("Controller name: %s\n", SDL_GameControllerName(controller));
+        return 1;
     }
 
-    // Load the texture atlas
-    TextureAtlas *textureAtlas = TextureAtlasCreate(arena);
+    return 0;
+}
+
+void GameShutdown(Game *game)
+{
+    // Close the controller
+    if (game->controller != NULL)
+    {
+        SDL_GameControllerClose(game->controller);
+    }
+
+    // Shutdown SDL
+    SDL_DestroyRenderer(game->renderer);
+    SDL_DestroyWindow(game->window);
+    SDL_Quit();
+}
+
+int main(void)
+{
+    Arena *globalArena = ArenaAlloc(128 * Megabyte);
+
+    // Initialize the game
+    Game game;
+    if (GameInit(&game) != 0)
+    {
+        printf("Failed to initialize capy-quest\n");
+        return 1;
+    }
+
+    // Load the default controller
+    if (GameLoadDefaultController(&game) != 0)
+    {
+        printf("Failed to load default controller\n");
+        printf("Will use keyboard controls instead\n");
+    }
+
+    // Get the window, renderer and controller.
+    SDL_Renderer *renderer = game.renderer;
+    SDL_GameController *controller = game.controller;
+
+    // Load the texture atlas from the assets folder
+    TextureAtlas *textureAtlas = TextureAtlasCreate(globalArena);
     TextureAtlasLoadSprites(renderer, textureAtlas, &STR("../assets/sprites/*.aseprite"));
 
     // Create the camera and set the position
@@ -123,9 +181,13 @@ int main(void)
     camera.scale = (Vec2){1, 1};
     camera.rotation = 0;
 
+    // Get the capy sprite
+    Sprite capySprite;
+    SpriteFromAtlas(&capySprite, textureAtlas, &STR("capy_idle"));
+
     // Setup the player
     Player player;
-    PlayerInit(&player, textureAtlas, &STR("capy_idle"));
+    PlayerInit(&player, &capySprite);
 
     // Setup the player control
     Controllable playerControl;
@@ -133,12 +195,13 @@ int main(void)
 
     // Coin entity list
     EntityList coinList;
-    EntityListInit(arena, &coinList, sizeof(Coin), 32);
+    EntityListInit(globalArena, &coinList, sizeof(Coin), 32);
 
     // Get the wall sprite
     Sprite wallSprite;
     SpriteFromAtlas(&wallSprite, textureAtlas, &STR("rock"));
 
+    // Create a simple map!
     int map[32][16] = {
         {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
         {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 1},
@@ -152,6 +215,7 @@ int main(void)
         {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
     };
 
+    // Create the walls
     Wall walls[128];
     int wallCount = 0;
 
@@ -190,6 +254,7 @@ int main(void)
         }
     }
 
+    // Store the last player rect
     SDL_Rect lastPlayerRect = {0, 0, 0, 0};
 
     // Dumb timer
@@ -364,6 +429,7 @@ int main(void)
         // 60 FPS
         SDL_Delay(16);
 
+        // Time keeps on slipping, slipping, slipping...
         time++;
     }
 
@@ -373,19 +439,11 @@ int main(void)
     // Free the texture atlas
     TextureAtlasFree(textureAtlas);
 
-    // Close the controller
-    if (controller != NULL)
-    {
-        SDL_GameControllerClose(controller);
-    }
-
-    // Shutdown SDL
-    SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(window);
-    SDL_Quit();
+    // Shutdown the game
+    GameShutdown(&game);
 
     // Clean up memory
-    ArenaFree(arena);
+    ArenaFree(globalArena);
 
     return 0;
 }
