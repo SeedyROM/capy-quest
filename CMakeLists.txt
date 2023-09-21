@@ -7,11 +7,14 @@ set(CMAKE_C_STANDARD 11)
 file(GLOB_RECURSE SOURCES src/*.c)
 include_directories(src/)
 
-# Set debug symbols flag
-set(CMAKE_BUILD_TYPE Debug)
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release)
+endif()
 
 # Set compiler flags
-set(CMAKE_C_FLAGS "-fsanitize=address -Wall -Wextra -pedantic -g -O0")
+set(CMAKE_C_FLAGS "-Wall -Wextra -pedantic")
+set(CMAKE_C_FLAGS_DEBUG "-fsanitize=address -g -O0")
+set(CMAKE_C_FLAGS_RELEASE "-O3")
 
 # Find packages
 find_package(SDL2 REQUIRED)
