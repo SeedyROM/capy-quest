@@ -2,6 +2,10 @@
 
 **A 2D platformer writting in C using SDL2!!!**
 
+## Docs
+
+Go read the [docs](https://capy-quest.readthedocs.io/en/latest/)!
+
 ## Supported platforms
 
 - [x] MacOS
