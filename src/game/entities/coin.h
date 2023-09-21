@@ -6,8 +6,7 @@
 #include "std/gfx.h"
 #include "std/util.h"
 
-typedef struct Coin
-{
+typedef struct Coin {
     TextureAtlas *atlas;
     bool collected;
     Sprite sprite;

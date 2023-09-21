@@ -1,7 +1,6 @@
 #include "std/fs.h"
 
-usize GetFileSize(FILE *file)
-{
+usize GetFileSize(FILE *file) {
     fseek(file, 0, SEEK_END);
     usize size = ftell(file);
     fseek(file, 0, SEEK_SET);
@@ -9,11 +8,9 @@ usize GetFileSize(FILE *file)
     return size;
 }
 
-String *ReadFileString(Arena *arena, String *path)
-{
+String *ReadFileString(Arena *arena, String *path) {
     FILE *file = fopen(path->ptr, "rb");
-    if (!file)
-    {
+    if (!file) {
         printf("Failed to open file: %s\n", path->ptr);
         exit(EXIT_FAILURE);
     }
@@ -28,8 +25,7 @@ String *ReadFileString(Arena *arena, String *path)
 
     // Read the file
     usize bytesRead = fread(result->ptr, sizeof(char), size, file);
-    if (bytesRead != size)
-    {
+    if (bytesRead != size) {
         printf("Failed to read file: %s\n", path->ptr);
         exit(EXIT_FAILURE);
     }
@@ -40,11 +36,9 @@ String *ReadFileString(Arena *arena, String *path)
     return result;
 }
 
-ByteArray *ReadFileBytes(Arena *arena, String *path)
-{
+ByteArray *ReadFileBytes(Arena *arena, String *path) {
     FILE *file = fopen(path->ptr, "rb");
-    if (!file)
-    {
+    if (!file) {
         printf("Failed to open file: %s\n", path->ptr);
         printf("Reason: %s\n", strerror(errno));
         exit(EXIT_FAILURE);
@@ -60,8 +54,7 @@ ByteArray *ReadFileBytes(Arena *arena, String *path)
 
     // Read the file
     usize bytesRead = fread(result->ptr, sizeof(u8), size, file);
-    if (bytesRead != size)
-    {
+    if (bytesRead != size) {
         printf("Failed to read file: %s\n", path->ptr);
         printf("Reason: %s\n", strerror(errno));
         exit(EXIT_FAILURE);
@@ -71,10 +64,8 @@ ByteArray *ReadFileBytes(Arena *arena, String *path)
     return result;
 }
 
-void *ByteArrayReadArray(ByteArray *array, usize size, usize *offset, usize count)
-{
-    if (*offset + (size * count) > array->len)
-    {
+void *ByteArrayReadArray(ByteArray *array, usize size, usize *offset, usize count) {
+    if (*offset + (size * count) > array->len) {
         printf("ByteArrayReadArray: Out of bounds\n");
         exit(EXIT_FAILURE);
     }

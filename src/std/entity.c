@@ -1,7 +1,6 @@
 #include "std/entity.h"
 
-void EntityListInit(Arena *arena, EntityList *list, usize entitySize, u16 capacity)
-{
+void EntityListInit(Arena *arena, EntityList *list, usize entitySize, u16 capacity) {
     list->count = 0;
     list->capacity = capacity;
     list->refs = ArenaPushArray(arena, capacity, EntityRef);
@@ -10,10 +9,8 @@ void EntityListInit(Arena *arena, EntityList *list, usize entitySize, u16 capaci
     list->lastEntity = list->entities;
 }
 
-EntityRef *EntityListAdd(EntityList *list, void *entity)
-{
-    if (list->count == list->capacity)
-    {
+EntityRef *EntityListAdd(EntityList *list, void *entity) {
+    if (list->count == list->capacity) {
         printf("EntityListAdd: list is full\n");
         return NULL;
     }
@@ -33,10 +30,8 @@ EntityRef *EntityListAdd(EntityList *list, void *entity)
     return ref;
 }
 
-void EntityListRemove(EntityList *list, EntityRef *ref)
-{
-    if (ref->id == list->count)
-    {
+void EntityListRemove(EntityList *list, EntityRef *ref) {
+    if (ref->id == list->count) {
         list->count--;
         return;
     }
@@ -57,21 +52,17 @@ void EntityListRemove(EntityList *list, EntityRef *ref)
 
     list->count--;
 
-    if (nextRef != NULL)
-    {
+    if (nextRef != NULL) {
         nextRef->id = ref->id;
     }
 
-    if (list->count == 0)
-    {
+    if (list->count == 0) {
         list->lastEntity = list->entities;
     }
 }
 
-void EntityListRemoveAtIndex(EntityList *list, u16 index)
-{
-    if (index < 0 || index >= list->count)
-    {
+void EntityListRemoveAtIndex(EntityList *list, u16 index) {
+    if (index < 0 || index >= list->count) {
         printf("EntityListRemoveAtIndex: index out of bounds\n");
         return;
     }
@@ -80,29 +71,24 @@ void EntityListRemoveAtIndex(EntityList *list, u16 index)
     EntityListRemove(list, ref);
 }
 
-EntityRef *EntityListGet(EntityList *list, u16 id)
-{
-    if (id < 1 || id > list->count)
-    {
+EntityRef *EntityListGet(EntityList *list, u16 id) {
+    if (id < 1 || id > list->count) {
         return NULL;
     }
 
     return list->refs + id - 1;
 }
 
-void *EntityListGetEntity(EntityList *list, u16 id)
-{
+void *EntityListGetEntity(EntityList *list, u16 id) {
     EntityRef *ref = EntityListGet(list, id);
-    if (ref == NULL)
-    {
+    if (ref == NULL) {
         return NULL;
     }
 
     return ref->entity;
 }
 
-void EntityListClear(EntityList *list)
-{
+void EntityListClear(EntityList *list) {
     list->count = 0;
     list->lastEntity = list->entities;
 }

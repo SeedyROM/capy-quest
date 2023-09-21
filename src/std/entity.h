@@ -1,21 +1,19 @@
 #pragma once
 
-#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
-#include "std/util.h"
 #include "std/arena.h"
+#include "std/util.h"
 
-typedef struct EntityRef
-{
+typedef struct EntityRef {
     u16 id;
     void *entity;
     struct EntityRef *next;
 } EntityRef;
 
-typedef struct EntityList
-{
+typedef struct EntityList {
     u16 count;
     u16 capacity;
     EntityRef *refs;

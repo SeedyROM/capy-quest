@@ -1,13 +1,12 @@
 #pragma once
 
-#include <string.h>
 #include <stdarg.h>
+#include <string.h>
 
 #include "std/arena.h"
 #include "std/util.h"
 
-typedef struct String
-{
+typedef struct String {
     u64 len;
     char *ptr;
 } String;
@@ -23,8 +22,7 @@ int StringCompare(String *string1, String *string2);
 #define STR_EQUAL(str1, str2) \
     (str1.len == str2.len && strncmp(str1.ptr, str2.ptr, min(str1.len, str2.len)) == 0)
 
-typedef struct StringBuilder
-{
+typedef struct StringBuilder {
     Arena *arena;
     String string;
 } StringBuilder;

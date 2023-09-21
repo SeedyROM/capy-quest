@@ -7,8 +7,7 @@
 
 #include "std/aseprite.h"
 
-TextureAtlas *TextureAtlasCreate(Arena *arena)
-{
+TextureAtlas *TextureAtlasCreate(Arena *arena) {
     TextureAtlas *atlas = ArenaPushStruct(arena, TextureAtlas);
     atlas->arena = arena;
     atlas->indices = ARRAY_INIT_DEFINED(atlas->arena, TextureAtlasIndices, TextureAtlasIndex, 128);
@@ -20,15 +19,11 @@ TextureAtlas *TextureAtlasCreate(Arena *arena)
     return atlas;
 }
 
-int TextureAtlasLoadSprites(SDL_Renderer *renderer, TextureAtlas *atlas, String *path)
-{
+int TextureAtlasLoadSprites(SDL_Renderer *renderer, TextureAtlas *atlas, String *path) {
     Arena *scratch = ArenaAlloc(128 * Megabyte);
-    tempMemoryBlock(scratch)
-    {
-
+    tempMemoryBlock(scratch) {
         // Sprite assets memory
-        typedef struct SpriteAssetPath
-        {
+        typedef struct SpriteAssetPath {
             String name;
             String path;
         } SpriteAssetPath;
@@ -46,8 +41,7 @@ int TextureAtlasLoadSprites(SDL_Renderer *renderer, TextureAtlas *atlas, String 
             printf("Found %zu sprite assets\n", spriteAssetPaths.len);
 
             // Get the paths;
-            for (usize i = 0; i < spriteAssetPaths.len; i++)
-            {
+            for (usize i = 0; i < spriteAssetPaths.len; i++) {
                 // Copy each path from the glob
                 String *pathString = StringCopyCString(scratch, globResult.gl_pathv[i]);
                 spriteAssetPaths.ptr[i].path = *pathString;
@@ -72,8 +66,7 @@ int TextureAtlasLoadSprites(SDL_Renderer *renderer, TextureAtlas *atlas, String 
         // Allocate space for the sprite frames
         ARRAY_ALLOC(scratch, AsepriteAnimationFrame, spriteFrames, 128);
 
-        for (usize i = 0; i < sprites.len; i++)
-        {
+        for (usize i = 0; i < sprites.len; i++) {
             // Read the sprite asset file
             String *spriteAssetPath = &spriteAssetPaths.ptr[i].path;
             String *spriteAssetName = &spriteAssetPaths.ptr[i].name;
@@ -90,8 +83,7 @@ int TextureAtlasLoadSprites(SDL_Renderer *renderer, TextureAtlas *atlas, String 
             ARRAY_PUSH(atlas->arena, atlas->indices, TextureAtlasIndex, atlasIndex);
 
             // Get all the the frames
-            for (usize j = 0; j < sprite->numFrames; j++)
-            {
+            for (usize j = 0; j < sprite->numFrames; j++) {
                 AsepriteAnimationFrame spriteFrameProcessed;
                 AsepriteGetAnimationFrame(sprite, j, &spriteFrameProcessed);
                 ARRAY_PUSH(scratch, spriteFrames, AsepriteAnimationFrame, spriteFrameProcessed);
@@ -99,8 +91,7 @@ int TextureAtlasLoadSprites(SDL_Renderer *renderer, TextureAtlas *atlas, String 
         }
 
         ARRAY_ALLOC_RESERVED(scratch, stbrp_rect, spriteRects, spriteFrames.len);
-        for (usize i = 0; i < spriteFrames.len; i++)
-        {
+        for (usize i = 0; i < spriteFrames.len; i++) {
             stbrp_rect *rect = &spriteRects.ptr[i];
             rect->id = i;
             rect->w = spriteFrames.ptr[i].sizeX;
@@ -113,24 +104,20 @@ int TextureAtlasLoadSprites(SDL_Renderer *renderer, TextureAtlas *atlas, String 
             stbrp_node *nodes = ArenaPushArray(scratch, spriteFrames.len, stbrp_node);
             stbrp_init_target(&context, spriteRects.len * 8, INT32_MAX, nodes, spriteRects.len);
             int result = stbrp_pack_rects(&context, spriteRects.ptr, spriteRects.len);
-            if (result == 0)
-            {
+            if (result == 0) {
                 printf("Failed to pack sprite frames\n");
                 return 1;
             }
         }
 
         // Get the size of the atlas
-        for (usize i = 0; i < spriteFrames.len; i++)
-        {
+        for (usize i = 0; i < spriteFrames.len; i++) {
             stbrp_rect *rect = &spriteRects.ptr[i];
-            if (rect->x + rect->w > atlas->width)
-            {
+            if (rect->x + rect->w > atlas->width) {
                 atlas->width = rect->x + rect->w;
             }
 
-            if (rect->y + rect->h > atlas->height)
-            {
+            if (rect->y + rect->h > atlas->height) {
                 atlas->height = rect->y + rect->h;
             }
         }
@@ -139,8 +126,7 @@ int TextureAtlasLoadSprites(SDL_Renderer *renderer, TextureAtlas *atlas, String 
         u32 *atlasPixels = ArenaPushArrayZero(scratch, atlas->width * atlas->height, u32);
 
         // Copy the sprite frames into the atlas
-        for (usize i = 0; i < spriteFrames.len; i++)
-        {
+        for (usize i = 0; i < spriteFrames.len; i++) {
             // Get the rect for the sprite frame
             stbrp_rect *rect = &spriteRects.ptr[i];
 
@@ -152,10 +138,8 @@ int TextureAtlasLoadSprites(SDL_Renderer *renderer, TextureAtlas *atlas, String 
 
             // Get the frame pixels and copy them into the atlas
             AsepriteAnimationFrame *spriteFrame = &spriteFrames.ptr[rect->id];
-            for (u16 y = 0; y < spriteFrame->sizeY; y++)
-            {
-                for (u16 x = 0; x < spriteFrame->sizeX; x++)
-                {
+            for (u16 y = 0; y < spriteFrame->sizeY; y++) {
+                for (u16 x = 0; x < spriteFrame->sizeX; x++) {
                     u32 *atlasPixel = &atlasPixels[(rect->y + y) * atlas->width + (rect->x + x)];
                     u32 *spritePixel = &spriteFrame->pixels[y * spriteFrame->sizeX + x];
 
@@ -178,12 +162,9 @@ int TextureAtlasLoadSprites(SDL_Renderer *renderer, TextureAtlas *atlas, String 
     return 0;
 }
 
-i64 TextureAtlasIndicesGetIndex(TextureAtlas *atlas, String *name)
-{
-    for (usize i = 0; i < atlas->indices.len; i++)
-    {
-        if (StringCompare(atlas->indices.ptr[i].name, name) == 0)
-        {
+i64 TextureAtlasIndicesGetIndex(TextureAtlas *atlas, String *name) {
+    for (usize i = 0; i < atlas->indices.len; i++) {
+        if (StringCompare(atlas->indices.ptr[i].name, name) == 0) {
             return i;
         }
     }
@@ -191,11 +172,9 @@ i64 TextureAtlasIndicesGetIndex(TextureAtlas *atlas, String *name)
     return -1;
 }
 
-TextureAtlasFrames TextureAtlasIndicesGetFrames(TextureAtlas *atlas, String *name)
-{
+TextureAtlasFrames TextureAtlasIndicesGetFrames(TextureAtlas *atlas, String *name) {
     int index = TextureAtlasIndicesGetIndex(atlas, name);
-    if (index < 0)
-    {
+    if (index < 0) {
         printf("Failed to find texture atlas index for %s\n", name->ptr);
         exit(EXIT_FAILURE);
     }
@@ -208,13 +187,11 @@ TextureAtlasFrames TextureAtlasIndicesGetFrames(TextureAtlas *atlas, String *nam
     return foundFrames;
 }
 
-void TextureAtlasFree(TextureAtlas *atlas)
-{
+void TextureAtlasFree(TextureAtlas *atlas) {
     SDL_DestroyTexture(atlas->texture);
 }
 
-void SpriteFromAtlas(Sprite *sprite, TextureAtlas *atlas, String *name)
-{
+void SpriteFromAtlas(Sprite *sprite, TextureAtlas *atlas, String *name) {
     sprite->atlas = atlas;
     sprite->frames = TextureAtlasIndicesGetFrames(atlas, name);
     sprite->currentFrame = 0;
@@ -225,16 +202,14 @@ void SpriteFromAtlas(Sprite *sprite, TextureAtlas *atlas, String *name)
     sprite->flipY = false;
 }
 
-void SpriteChange(Sprite *sprite, String *name)
-{
+void SpriteChange(Sprite *sprite, String *name) {
     Vec2 pos = sprite->pos;
     sprite->frames = TextureAtlasIndicesGetFrames(sprite->atlas, name);
     sprite->pos = pos;
     sprite->currentFrame = 0;
 }
 
-void SpriteDrawFrame(Sprite *sprite, SDL_Renderer *renderer, u16 currentFrame)
-{
+void SpriteDrawFrame(Sprite *sprite, SDL_Renderer *renderer, u16 currentFrame) {
     SDL_Rect *frame = &sprite->frames.ptr[currentFrame];
 
     SDL_Rect destRect = {
@@ -248,30 +223,25 @@ void SpriteDrawFrame(Sprite *sprite, SDL_Renderer *renderer, u16 currentFrame)
         .y = frame->h / 2};
 
     SDL_RendererFlip flip = 0;
-    if (sprite->flipX)
-    {
+    if (sprite->flipX) {
         flip |= SDL_FLIP_HORIZONTAL;
     }
 
-    if (sprite->flipY)
-    {
+    if (sprite->flipY) {
         flip |= SDL_FLIP_VERTICAL;
     }
 
     SDL_RenderCopyEx(renderer, sprite->atlas->texture, frame, &destRect, sprite->rotation, &center, flip);
 }
 
-void SpriteDraw(Sprite *sprite, SDL_Renderer *renderer)
-{
+void SpriteDraw(Sprite *sprite, SDL_Renderer *renderer) {
     SpriteDrawFrame(sprite, renderer, sprite->currentFrame);
 }
 
-void SpriteNextFrame(Sprite *sprite)
-{
+void SpriteNextFrame(Sprite *sprite) {
     sprite->currentFrame = (sprite->currentFrame + 1) % sprite->frames.len;
 }
 
-void SpritePreviousFrame(Sprite *sprite)
-{
+void SpritePreviousFrame(Sprite *sprite) {
     sprite->currentFrame = (sprite->currentFrame - 1) % sprite->frames.len;
 }

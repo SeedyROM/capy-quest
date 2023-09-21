@@ -2,20 +2,17 @@
 
 #include <SDL2/SDL.h>
 
+#include "game/behaviours.h"
+#include "game/entities.h"
 #include "std.h"
 
-#include "game/entities.h"
-#include "game/behaviours.h"
-
-typedef struct Camera
-{
+typedef struct Camera {
     Vec2 position;
     Vec2 scale;
     float rotation;
 } Camera;
 
-typedef struct Game
-{
+typedef struct Game {
     SDL_Window *window;
     SDL_Renderer *renderer;
     u16 windowWidth;

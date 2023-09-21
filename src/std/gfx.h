@@ -1,17 +1,15 @@
 #pragma once
 
+#include <SDL2/SDL.h>
 #include <stdbool.h>
 
-#include <SDL2/SDL.h>
-
-#include "std/util.h"
 #include "std/str.h"
+#include "std/util.h"
 
 // TODO(SeedyROM): Frames need durations... fuck
 typedef SDL_Rect TextureAtlasFrame;
 
-typedef struct TextureAtlasIndex
-{
+typedef struct TextureAtlasIndex {
     u16 numFrames;
     u32 frameIndex;
     String *name;
@@ -20,8 +18,7 @@ typedef struct TextureAtlasIndex
 ARRAY_DEFINE(TextureAtlasFrame, TextureAtlasFrames);
 ARRAY_DEFINE(TextureAtlasIndex, TextureAtlasIndices);
 
-typedef struct TextureAtlas
-{
+typedef struct TextureAtlas {
     Arena *arena;
     TextureAtlasIndices indices;
     TextureAtlasFrames frames;
@@ -36,8 +33,7 @@ i64 TextureAtlasIndicesGetIndex(TextureAtlas *atlas, String *name);
 TextureAtlasFrames TextureAtlasIndicesGetFrames(TextureAtlas *atlas, String *name);
 void TextureAtlasFree(TextureAtlas *atlas);
 
-typedef struct Sprite
-{
+typedef struct Sprite {
     TextureAtlas *atlas;
     TextureAtlasFrames frames;
     u16 currentFrame;

@@ -1,16 +1,14 @@
-#include <stdio.h>
+#include <SDL2/SDL.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <string.h>
 
-#include <SDL2/SDL.h>
-
-#include "std.h"
 #include "game.h"
+#include "std.h"
 
 static f32 gravity = 0.05f;
 
-bool IsCollision(Sprite *a, Sprite *b)
-{
+bool IsCollision(Sprite *a, Sprite *b) {
     SDL_Rect aRect = a->frames.ptr[a->currentFrame];
     SDL_Rect bRect = b->frames.ptr[b->currentFrame];
 
@@ -20,34 +18,29 @@ bool IsCollision(Sprite *a, Sprite *b)
     bRect.x = b->pos.x + (bRect.w / 2);
     bRect.y = b->pos.y + (bRect.h / 2);
 
-    if (aRect.x + aRect.w < bRect.x || bRect.x + bRect.w < aRect.x)
-    {
+    if (aRect.x + aRect.w < bRect.x || bRect.x + bRect.w < aRect.x) {
         return false;
     }
 
-    if (aRect.y + aRect.h < bRect.y || bRect.y + bRect.h < aRect.y)
-    {
+    if (aRect.y + aRect.h < bRect.y || bRect.y + bRect.h < aRect.y) {
         return false;
     }
 
     return true;
 }
 
-int main(void)
-{
+int main(void) {
     Arena *globalArena = ArenaAlloc(128 * Megabyte);
 
     // Initialize the game
     Game game;
-    if (GameInit(&game) != 0)
-    {
+    if (GameInit(&game) != 0) {
         printf("Failed to initialize capy-quest\n");
         return 1;
     }
 
     // Load the default controller
-    if (GameLoadDefaultController(&game) != 0)
-    {
+    if (GameLoadDefaultController(&game) != 0) {
         printf("Failed to load default controller\n");
         printf("Will use keyboard controls instead\n");
     }
@@ -105,21 +98,17 @@ int main(void)
     int wallCount = 0;
 
     // Add the objects to the map
-    for (int y = 0; y < 32; y++)
-    {
-        for (int x = 0; x < 16; x++)
-        {
+    for (int y = 0; y < 32; y++) {
+        for (int x = 0; x < 16; x++) {
             int tile = map[y][x];
-            if (tile == 1)
-            {
+            if (tile == 1) {
                 Wall wall;
                 WallInit(&wall, (Vec2){x * 16, y * 16});
                 walls[wallCount] = wall;
                 wallCount++;
             }
 
-            if (tile == 2)
-            {
+            if (tile == 2) {
                 // Create a coin sprite, don't alloc.
                 Coin coin;
                 CoinInit(&coin, textureAtlas);
@@ -131,8 +120,7 @@ int main(void)
                 EntityListAdd(&coinList, &coin);
             }
 
-            if (tile == 3)
-            {
+            if (tile == 3) {
                 player.sprite.pos.x = x * 16;
                 player.sprite.pos.y = y * 16;
             }
@@ -148,31 +136,25 @@ int main(void)
     // Loop de loop
     SDL_Event event;
     bool running = true;
-    while (running)
-    {
-        while (SDL_PollEvent(&event))
-        {
+    while (running) {
+        while (SDL_PollEvent(&event)) {
             // Quit this fucker
-            if (event.type == SDL_QUIT)
-            {
+            if (event.type == SDL_QUIT) {
                 running = false;
             }
 
             // Add the controller if it's plugged in
-            if (event.type == SDL_CONTROLLERDEVICEADDED)
-            {
+            if (event.type == SDL_CONTROLLERDEVICEADDED) {
                 printf("Attempting to add controller\n");
                 controller = SDL_GameControllerOpen(0);
-                if (controller == NULL)
-                {
+                if (controller == NULL) {
                     printf("Failed to add controller\n");
                     fprintf(stderr, "SDL_JoystickOpen Error: %s\n", SDL_GetError());
                 }
             }
 
             // Remove the controller if it's unplugged
-            if (event.type == SDL_CONTROLLERDEVICEREMOVED)
-            {
+            if (event.type == SDL_CONTROLLERDEVICEREMOVED) {
                 printf("Controller disconnected\n");
                 SDL_GameControllerClose(controller);
                 controller = NULL;
@@ -180,8 +162,7 @@ int main(void)
         }
 
         // This is awful but update the player sprite
-        if (time % 20 == 0)
-        {
+        if (time % 20 == 0) {
             SpriteNextFrame(&player.sprite);
         }
 
@@ -195,8 +176,7 @@ int main(void)
         playerRect.y = player.sprite.pos.y;
 
         // Resolve collisions with walls
-        for (int i = 0; i < wallCount; i++)
-        {
+        for (int i = 0; i < wallCount; i++) {
             Wall wall = walls[i];
 
             SDL_Rect wallRect = wallSprite.frames.ptr[wallSprite.currentFrame];
@@ -205,18 +185,15 @@ int main(void)
 
             SDL_Rect overlap = {0, 0, 0, 0};
 
-            if (!SDL_IntersectRect(&playerRect, &wallRect, &overlap))
-            {
+            if (!SDL_IntersectRect(&playerRect, &wallRect, &overlap)) {
                 player.grounded = false;
                 continue;
             }
 
             // If the sprite was previous above the platform
-            if (lastPlayerRect.y + lastPlayerRect.h <= wallRect.y)
-            {
+            if (lastPlayerRect.y + lastPlayerRect.h <= wallRect.y) {
                 // If the sprite is now inside the platform
-                if (playerRect.y + playerRect.h > wallRect.y)
-                {
+                if (playerRect.y + playerRect.h > wallRect.y) {
                     // Move the sprite up
                     player.sprite.pos.y = wallRect.y - playerRect.h;
                     player.velocity.y = 0;
@@ -224,11 +201,9 @@ int main(void)
                 }
             }
 
-            if (lastPlayerRect.y >= wallRect.y + wallRect.h)
-            {
+            if (lastPlayerRect.y >= wallRect.y + wallRect.h) {
                 // If the sprite is now inside the platform
-                if (playerRect.y < wallRect.y + wallRect.h)
-                {
+                if (playerRect.y < wallRect.y + wallRect.h) {
                     // Move the sprite down
                     player.sprite.pos.y = wallRect.y + wallRect.h;
                     player.velocity.y = 0;
@@ -240,29 +215,24 @@ int main(void)
             playerRect.y = player.sprite.pos.y;
 
             // If we're still colliding, try to resolve the X axis
-            if (!SDL_IntersectRect(&playerRect, &wallRect, &overlap))
-            {
+            if (!SDL_IntersectRect(&playerRect, &wallRect, &overlap)) {
                 continue;
             }
 
             // If the sprite was previous to the left of the platform
-            if (lastPlayerRect.x + lastPlayerRect.w <= wallRect.x)
-            {
+            if (lastPlayerRect.x + lastPlayerRect.w <= wallRect.x) {
                 // If the sprite is now inside the platform
-                if (playerRect.x + playerRect.w > wallRect.x)
-                {
+                if (playerRect.x + playerRect.w > wallRect.x) {
                     // Move the sprite left
                     player.sprite.pos.x = wallRect.x - playerRect.w;
                     player.velocity.x = 0;
                 }
             }
 
-            if (lastPlayerRect.x >= wallRect.x + wallRect.w)
-            {
+            if (lastPlayerRect.x >= wallRect.x + wallRect.w) {
                 // WTF IS THIS 0.5??? Is it the float to integer casting?
                 // If the sprite is now inside the platform
-                if (playerRect.x <= wallRect.x + wallRect.w + 0.5)
-                {
+                if (playerRect.x <= wallRect.x + wallRect.w + 0.5) {
                     // Move the sprite right
                     player.sprite.pos.x = wallRect.x + wallRect.w + 0.5;
                     player.velocity.x = 0;
@@ -271,19 +241,16 @@ int main(void)
         }
 
         // Handle coin collisions
-        for (int i = 0; i < coinList.count; i++)
-        {
+        for (int i = 0; i < coinList.count; i++) {
             Coin *coin = EntityListGetEntity(&coinList, i + 1);
             CoinUpdate(coin);
 
-            if (coin->delete)
-            {
+            if (coin->delete) {
                 EntityListRemoveAtIndex(&coinList, i);
                 continue;
             }
 
-            if (IsCollision(&player.sprite, &coin->sprite))
-            {
+            if (IsCollision(&player.sprite, &coin->sprite)) {
                 CoinCollect(coin);
             }
         }
@@ -295,8 +262,7 @@ int main(void)
         SDL_RenderClear(renderer);
 
         // Draw the coins
-        for (int i = 0; i < coinList.count; i++)
-        {
+        for (int i = 0; i < coinList.count; i++) {
             // TODO(SeedyROM): This data should be iterated over the actual memory block
             // instead of the references.
             Coin *coin = EntityListGetEntity(&coinList, i + 1);
@@ -307,8 +273,7 @@ int main(void)
         SpriteDraw(&player.sprite, renderer);
 
         // Draw the walls
-        for (int i = 0; i < wallCount; i++)
-        {
+        for (int i = 0; i < wallCount; i++) {
             wallSprite.pos = walls[i].position;
             SpriteDraw(&wallSprite, renderer);
         }

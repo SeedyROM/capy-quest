@@ -6,8 +6,7 @@
 
 #include "util.h"
 
-typedef struct Arena
-{
+typedef struct Arena {
     void *base;
     usize size;
     usize used;
@@ -32,8 +31,7 @@ void ArenaClear(Arena *arena);
 #define ArenaPopStruct(arena, type) ArenaPop(arena, sizeof(type))
 #define ArenaPopArray(arena, count, type) ArenaPop(arena, (count) * sizeof(type))
 
-typedef struct TempMemory
-{
+typedef struct TempMemory {
     Arena *arena;
     usize position;
 } TempMemory;

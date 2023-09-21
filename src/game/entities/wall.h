@@ -2,8 +2,7 @@
 
 #include "std/util.h"
 
-typedef struct Wall
-{
+typedef struct Wall {
     Vec2 position;
 } Wall;
 

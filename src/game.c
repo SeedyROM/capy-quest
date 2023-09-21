@@ -1,10 +1,8 @@
 #include "game.h"
 
-int GameInit(Game *game)
-{
+int GameInit(Game *game) {
     // Initialize SDL
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER) != 0)
-    {
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER) != 0) {
         fprintf(stderr, "SDL_Init Error: %s\n", SDL_GetError());
         return 1;
     }
@@ -14,8 +12,7 @@ int GameInit(Game *game)
 
     // Create a window
     SDL_Window *window = SDL_CreateWindow("Capy Quest", 100, 100, 1280, 720, SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI);
-    if (window == NULL)
-    {
+    if (window == NULL) {
         fprintf(stderr, "SDL_CreateWindow Error: %s\n", SDL_GetError());
         return 1;
     }
@@ -23,8 +20,7 @@ int GameInit(Game *game)
     // Create a renderer
     SDL_SetHint(SDL_HINT_RENDER_BATCHING, "1");
     SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-    if (renderer == NULL)
-    {
+    if (renderer == NULL) {
         fprintf(stderr, "SDL_CreateRenderer Error: %s\n", SDL_GetError());
         return 1;
     }
@@ -51,30 +47,25 @@ int GameInit(Game *game)
     return 0;
 }
 
-int GameLoadDefaultController(Game *game)
-{
+int GameLoadDefaultController(Game *game) {
     SDL_GameController *controller = game->controller;
 
     // Load the joystick mapping
-    if (SDL_GameControllerAddMappingsFromFile("../assets/gamecontrollerdb.txt") == -1)
-    {
+    if (SDL_GameControllerAddMappingsFromFile("../assets/gamecontrollerdb.txt") == -1) {
         fprintf(stderr, "SDL_GameControllerAddMappingsFromFile Error: %s\n", SDL_GetError());
         return 1;
     }
     // Print how many joysticks are connected
     printf("Number of joysticks connected: %d\n", SDL_NumJoysticks());
-    if (SDL_NumJoysticks() > 0)
-    {
+    if (SDL_NumJoysticks() > 0) {
         controller = SDL_GameControllerOpen(0);
-        if (controller == NULL)
-        {
+        if (controller == NULL) {
             fprintf(stderr, "SDL_JoystickOpen Error: %s\n", SDL_GetError());
             return 1;
         }
     }
 
-    if (controller != NULL)
-    {
+    if (controller != NULL) {
         // Print the joystick name
         printf("Controller name: %s\n", SDL_GameControllerName(controller));
         return 1;
@@ -83,11 +74,9 @@ int GameLoadDefaultController(Game *game)
     return 0;
 }
 
-void GameShutdown(Game *game)
-{
+void GameShutdown(Game *game) {
     // Close the controller
-    if (game->controller != NULL)
-    {
+    if (game->controller != NULL) {
         SDL_GameControllerClose(game->controller);
     }
 

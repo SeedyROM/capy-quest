@@ -1,10 +1,9 @@
 #pragma once
 
-#include <stdint.h>
-#include <stddef.h>
-#include <stdbool.h>
-
 #include <SDL2/SDL.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #define Kilobyte (1024)
 #define Megabyte (Kilobyte * 1024)
@@ -37,8 +36,7 @@ typedef double f64;
     } name
 
 #define ARRAY_DEFINE(type, name) \
-    typedef struct name          \
-    {                            \
+    typedef struct name {        \
         type *ptr;               \
         usize len;               \
         usize cap;               \
@@ -63,8 +61,7 @@ typedef double f64;
         count}
 
 #define ARRAY_INIT_DEFINED(arena, type, subtype, count) \
-    (type)                                              \
-    {                                                   \
+    (type) {                                            \
         ArenaPushArrayZero(arena, count, subtype),      \
             0,                                          \
             count                                       \
@@ -78,10 +75,8 @@ typedef double f64;
 
 // TODO(SeedyROM): Don't use memcpy here
 #define ARRAY_PUSH(arena, array, type, value)                      \
-    do                                                             \
-    {                                                              \
-        if (array.len == array.cap)                                \
-        {                                                          \
+    do {                                                           \
+        if (array.len == array.cap) {                              \
             array.cap *= 2;                                        \
                                                                    \
             type *newPtr = ArenaPushArray(arena, array.cap, type); \
@@ -92,8 +87,7 @@ typedef double f64;
         array.ptr[array.len++] = value;                            \
     } while (0)
 
-typedef struct Vec2
-{
+typedef struct Vec2 {
     f32 x;
     f32 y;
 } Vec2;

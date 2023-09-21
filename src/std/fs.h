@@ -1,17 +1,16 @@
 #pragma once
 
+#include <errno.h>
+#include <stdio.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <stdio.h>
-#include <errno.h>
 
 #include "std/arena.h"
-#include "std/util.h"
 #include "std/str.h"
+#include "std/util.h"
 
-typedef struct ByteArray
-{
+typedef struct ByteArray {
     usize len;
     u8 *ptr;
 } ByteArray;

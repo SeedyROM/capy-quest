@@ -6,8 +6,7 @@
 #include "game/behaviours/controllable.h"
 #include "std/gfx.h"
 
-typedef struct Player
-{
+typedef struct Player {
     Sprite sprite;
     Vec2 velocity;
     bool grounded;

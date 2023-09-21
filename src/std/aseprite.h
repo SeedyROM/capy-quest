@@ -1,15 +1,14 @@
 #pragma once
 
-#include "std/fs.h"
 #include "std/arena.h"
+#include "std/fs.h"
 #include "std/str.h"
 #include "std/util.h"
 
 static const u32 AsepriteFileMagic = 0xA5E0;
 static const u32 AsepriteFrameMagic = 0xF1FA;
 
-typedef enum AsepriteChunkType
-{
+typedef enum AsepriteChunkType {
     AsepriteChunkType_Layer = 0x2004,
     AsepriteChunkType_Cel = 0x2005,
     AsepriteChunkType_CelExtra = 0x2006,
@@ -21,23 +20,20 @@ typedef enum AsepriteChunkType
     AsepriteChunkType_UserData = 0x2020,
 } AsepriteChunkType;
 
-typedef enum AsepriteCelType
-{
+typedef enum AsepriteCelType {
     AsepriteCelType_RawCel = 0,
     AsepriteCelType_LinkedCel = 1,
     AsepriteCelType_CompressedImage = 2,
     AespriteCelType_CompressedTileMap = 3,
 } AsepriteCelType;
 
-typedef struct AespriteCelCompressedImage
-{
+typedef struct AespriteCelCompressedImage {
     u16 width;
     u16 height;
     u32 *pixels;
 } AespriteCelCompressedImage;
 
-typedef struct AsepriteFrameCelChunk
-{
+typedef struct AsepriteFrameCelChunk {
     u16 layerIndex;
     u16 positionX;
     u16 positionY;
@@ -46,33 +42,28 @@ typedef struct AsepriteFrameCelChunk
     i16 zIndex;
     u32 *pixels;
 
-    union
-    {
+    union {
         AespriteCelCompressedImage compressedImage;
     } cel;
 } AsepriteFrameCelChunk;
 
-typedef struct AsepriteFrameChunk
-{
+typedef struct AsepriteFrameChunk {
     u32 size;
     AsepriteChunkType type;
 
-    union
-    {
+    union {
         AsepriteFrameCelChunk frameCel;
     } chunk;
 } AsepriteFrameChunk;
 
-typedef struct AsepriteFrameRaw
-{
+typedef struct AsepriteFrameRaw {
     u32 size;
     u16 duration;
     u16 numChunks;
     AsepriteFrameChunk *chunks;
 } AsepriteFrameRaw;
 
-typedef struct AsepriteAnimationFrame
-{
+typedef struct AsepriteAnimationFrame {
     u16 sizeX;
     u16 sizeY;
     u16 frameDuration;
@@ -84,8 +75,7 @@ typedef struct AsepriteAnimationFrame
     u32 *pixels;
 } AsepriteAnimationFrame;
 
-typedef struct AsepriteFile
-{
+typedef struct AsepriteFile {
     u32 size;
     u16 width;
     u16 height;

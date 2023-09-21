@@ -4,8 +4,7 @@
 
 #include "std/util.h"
 
-typedef struct Controllable
-{
+typedef struct Controllable {
     Vec2 *position;
     Vec2 *velocity;
     bool *grounded;
