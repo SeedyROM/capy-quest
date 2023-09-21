@@ -3,8 +3,8 @@
 #include <string.h>
 #include <stdarg.h>
 
-#include "arena.h"
-#include "util.h"
+#include "std/arena.h"
+#include "std/util.h"
 
 typedef struct String
 {

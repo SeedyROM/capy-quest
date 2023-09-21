@@ -1,9 +1,9 @@
 #pragma once
 
-#include "fs.h"
-#include "arena.h"
-#include "str.h"
-#include "util.h"
+#include "std/fs.h"
+#include "std/arena.h"
+#include "std/str.h"
+#include "std/util.h"
 
 static const u32 AsepriteFileMagic = 0xA5E0;
 static const u32 AsepriteFrameMagic = 0xF1FA;

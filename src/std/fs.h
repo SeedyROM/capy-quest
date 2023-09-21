@@ -6,9 +6,9 @@
 #include <stdio.h>
 #include <errno.h>
 
-#include "arena.h"
-#include "util.h"
-#include "str.h"
+#include "std/arena.h"
+#include "std/util.h"
+#include "std/str.h"
 
 typedef struct ByteArray
 {

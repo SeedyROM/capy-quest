@@ -2,6 +2,9 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
+
+#include <SDL2/SDL.h>
 
 #define Kilobyte (1024)
 #define Megabyte (Kilobyte * 1024)
