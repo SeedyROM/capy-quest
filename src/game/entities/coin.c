@@ -15,15 +15,16 @@ void CoinInit(Coin *coin, TextureAtlas *atlas)
 
 void CoinCollect(Coin *coin)
 {
+    if (coin->collected)
+        return;
+
     coin->collected = true;
 
-    Vec2 pos = coin->sprite.pos;
-    SpriteFromAtlas(&coin->sprite, coin->atlas, &STR("coin_collected"));
-    coin->sprite.pos = pos;
+    SpriteChange(&coin->sprite, &STR("coin_collected"));
     coin->currentFrame = 0;
 
-    coin->frameDuration = 5;
-    coin->time = 5;
+    coin->frameDuration = 1;
+    coin->time = 0;
 }
 
 void CoinUpdate(Coin *coin)

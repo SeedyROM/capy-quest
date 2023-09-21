@@ -49,6 +49,7 @@ typedef struct Sprite
 } Sprite;
 
 void SpriteFromAtlas(Sprite *sprite, TextureAtlas *atlas, String *name);
+void SpriteChange(Sprite *sprite, String *name);
 void SpriteDraw(Sprite *sprite, SDL_Renderer *renderer);
 void SpriteDrawFrame(Sprite *sprite, SDL_Renderer *renderer, u16 currentFrame);
 

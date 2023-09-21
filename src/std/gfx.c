@@ -225,6 +225,14 @@ void SpriteFromAtlas(Sprite *sprite, TextureAtlas *atlas, String *name)
     sprite->flipY = false;
 }
 
+void SpriteChange(Sprite *sprite, String *name)
+{
+    Vec2 pos = sprite->pos;
+    sprite->frames = TextureAtlasIndicesGetFrames(sprite->atlas, name);
+    sprite->pos = pos;
+    sprite->currentFrame = 0;
+}
+
 void SpriteDrawFrame(Sprite *sprite, SDL_Renderer *renderer, u16 currentFrame)
 {
     SDL_Rect *frame = &sprite->frames.ptr[currentFrame];
