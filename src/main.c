@@ -300,6 +300,7 @@ int main(void)
         ControllableUpdate(&playerControl, controller);
         PlayerUpdate(&player, gravity);
 
+        // Handle collisions
         SDL_Rect playerRect = player.sprite.frames.ptr[player.sprite.currentFrame];
         playerRect.x = player.sprite.pos.x;
         playerRect.y = player.sprite.pos.y;
@@ -384,6 +385,7 @@ int main(void)
         for (int i = 0; i < coinList.count; i++)
         {
             Coin *coin = EntityListGetEntity(&coinList, i + 1);
+            CoinUpdate(coin);
 
             if (coin->delete)
             {
@@ -409,12 +411,11 @@ int main(void)
             // TODO(SeedyROM): This data should be iterated over the actual memory block
             // instead of the references.
             Coin *coin = EntityListGetEntity(&coinList, i + 1);
-            CoinDraw(coin, renderer);
-            CoinUpdate(coin);
+            SpriteDrawFrame(&coin->sprite, renderer, coin->currentFrame);
         }
 
         // Draw the player
-        PlayerDraw(&player, renderer);
+        SpriteDraw(&player.sprite, renderer);
 
         // Draw the walls
         for (int i = 0; i < wallCount; i++)

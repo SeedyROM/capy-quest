@@ -16,4 +16,3 @@ typedef struct Player
 void PlayerInit(Player *player, Sprite *sprite);
 void PlayerControl(Controllable *controllable, SDL_GameController *controller);
 void PlayerUpdate(Player *player, f32 gravity);
-void PlayerDraw(Player *player, SDL_Renderer *renderer);

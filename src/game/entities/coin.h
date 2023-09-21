@@ -20,6 +20,5 @@ typedef struct Coin
 
 void CoinInit(Coin *coin, TextureAtlas *atlas);
 void CoinCollect(Coin *coin);
-void CoinDraw(Coin *coin, SDL_Renderer *renderer);
 
 void CoinUpdate(Coin *coin);

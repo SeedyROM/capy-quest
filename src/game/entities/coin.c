@@ -26,11 +26,6 @@ void CoinCollect(Coin *coin)
     coin->time = 5;
 }
 
-void CoinDraw(Coin *coin, SDL_Renderer *renderer)
-{
-    SpriteDrawFrame(&coin->sprite, renderer, coin->currentFrame);
-}
-
 void CoinUpdate(Coin *coin)
 {
     if (coin->collected)

@@ -155,8 +155,3 @@ void PlayerUpdate(Player *player, f32 gravity)
     sprite->pos.x += player->velocity.x;
     sprite->pos.y += player->velocity.y;
 }
-
-void PlayerDraw(Player *player, SDL_Renderer *renderer)
-{
-    SpriteDraw(&player->sprite, renderer);
-}
