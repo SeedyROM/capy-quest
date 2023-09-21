@@ -4,8 +4,8 @@
 
 #include <SDL2/SDL.h>
 
-#include "util.h"
-#include "str.h"
+#include "std/util.h"
+#include "std/str.h"
 
 // TODO(SeedyROM): Frames need durations... fuck
 typedef SDL_Rect TextureAtlasFrame;

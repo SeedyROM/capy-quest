@@ -1,4 +1,4 @@
-#include "str.h"
+#include "std/str.h"
 
 String *StringCopy(Arena *arena, String *string)
 {

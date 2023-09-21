@@ -1,4 +1,4 @@
-#include "aseprite.h"
+#include "std/aseprite.h"
 
 #include <stdio.h>
 #include <stdlib.h>

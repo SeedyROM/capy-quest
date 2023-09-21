@@ -4,8 +4,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "util.h"
-#include "arena.h"
+#include "std/util.h"
+#include "std/arena.h"
 
 typedef struct EntityRef
 {

@@ -4,258 +4,18 @@
 
 #include <SDL2/SDL.h>
 
-#include "arena.h"
-#include "entity.h"
-#include "gfx.h"
-#include "str.h"
-#include "util.h"
+#include "game/entities.h"
+#include "game/behaviours.h"
+#include "std/entity.h"
 
-static int windowWidth = 0;
-static int windowHeight = 0;
 static f32 gravity = 0.05f;
 
-typedef struct Controllable
+typedef struct Camera
 {
-    Vec2 *position;
-    Vec2 *velocity;
-    bool *grounded;
-
-    void (*update)(struct Controllable *controllable, SDL_GameController *controller);
-} Controllable;
-
-void ControllableInit(Controllable *controllable, Vec2 *position, Vec2 *velocity, bool *grounded, void (*update)(Controllable *controllable, SDL_GameController *controller))
-{
-    controllable->position = position;
-    controllable->velocity = velocity;
-    controllable->grounded = grounded;
-    controllable->update = update;
-}
-
-void ControllableUpdate(Controllable *controllable, SDL_GameController *controller)
-{
-    controllable->update(controllable, controller);
-}
-
-typedef struct Player
-{
-    Sprite sprite;
-    Vec2 velocity;
-    bool grounded;
-} Player;
-
-void PlayerInit(Player *player, TextureAtlas *atlas, String *name)
-{
-    SpriteFromAtlas(&player->sprite, atlas, name);
-    player->velocity = (Vec2){0, 0};
-    player->grounded = false;
-}
-
-void PlayerControl(Controllable *controllable, SDL_GameController *controller)
-{
-    bool isUpPressed = false;
-
-    Vec2 *velocity = controllable->velocity;
-
-    const f32 maxSpeed = 2.0;
-    // Move with arrow keys
-    const Uint8 *state = SDL_GetKeyboardState(NULL);
-
-    // TODO(SeedyROM): Dedup player control logic for keyboard and joystick
-    // Move with joystick
-    if (controller != NULL)
-    {
-        // Update the game controller
-        SDL_GameControllerUpdate();
-
-        // Get the joystick state
-        Sint16 xAxis = SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_LEFTX);
-        Sint16 yAxis = SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_LEFTY);
-
-        // printf("xAxis: %d, yAxis: %d\n", xAxis, yAxis);
-        // printf("A Button: %d\n", SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_A));
-
-        // Deadzone
-        if (xAxis > -8000 && xAxis < 8000)
-        {
-            xAxis = 0;
-        }
-        if (yAxis > -8000 && yAxis < 8000)
-        {
-            yAxis = 0;
-        }
-
-        // Move
-        if (xAxis < 0)
-        {
-            // Set to 0 if facing the other way
-            if (velocity->x > 0)
-                velocity->x = 0;
-
-            if (velocity->x > -maxSpeed)
-                velocity->x -= 0.05f;
-            else if (velocity->x < -maxSpeed)
-                velocity->x = -maxSpeed;
-        }
-        if (xAxis > 0)
-        {
-            // Set to 0 if facing the other way
-            if (velocity->x < 0)
-                velocity->x = 0;
-
-            if (velocity->x < maxSpeed)
-                velocity->x += 0.05f;
-            else if (velocity->x > maxSpeed)
-                velocity->x = maxSpeed;
-        }
-
-        // If the gravity is zero allow up and down movement
-        if (gravity == 0)
-        {
-            if (yAxis < 0)
-            {
-                velocity->y = -1.2;
-            }
-            if (yAxis > 0)
-            {
-                velocity->y = 1.2;
-            }
-
-            // If up and down are not pressed, slow down
-            if (yAxis == 0)
-            {
-                if (velocity->y > 0)
-                {
-                    velocity->y -= 0.09f;
-                    if (velocity->y < 0)
-                        velocity->y = 0;
-                }
-                else if (velocity->y < 0)
-                {
-                    velocity->y += 0.09f;
-                    if (velocity->y > 0)
-                        velocity->y = 0;
-                }
-            }
-        }
-
-        // If left and right are not pressed, slow down
-        if (xAxis == 0)
-        {
-            if (velocity->x > 0)
-            {
-                velocity->x -= 0.09f;
-                if (velocity->x < 0)
-                    velocity->x = 0;
-            }
-            else if (velocity->x < 0)
-            {
-                velocity->x += 0.09f;
-                if (velocity->x > 0)
-                    velocity->x = 0;
-            }
-        }
-
-        isUpPressed = SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_A);
-
-        if (isUpPressed)
-        {
-            velocity->y = -1.4;
-            isUpPressed = false;
-        }
-    }
-    else
-    {
-        if (state[SDL_SCANCODE_LEFT])
-        {
-            if (velocity->x > -maxSpeed)
-                velocity->x -= 0.05f;
-            else if (velocity->x < -maxSpeed)
-                velocity->x = -maxSpeed;
-        }
-        if (state[SDL_SCANCODE_RIGHT])
-        {
-            if (velocity->x < maxSpeed)
-                velocity->x += 0.05f;
-            else if (velocity->x > maxSpeed)
-                velocity->x = maxSpeed;
-        }
-
-        // If left and right are not pressed, slow down
-        if (!state[SDL_SCANCODE_LEFT] && !state[SDL_SCANCODE_RIGHT])
-        {
-            if (velocity->x > 0)
-            {
-                velocity->x -= 0.09f;
-                if (velocity->x < 0)
-                    velocity->x = 0;
-            }
-            else if (velocity->x < 0)
-            {
-                velocity->x += 0.09f;
-                if (velocity->x > 0)
-                    velocity->x = 0;
-            }
-        }
-
-        // Jump
-        if (state[SDL_SCANCODE_UP])
-        {
-            velocity->y = -1.4;
-        }
-    }
-}
-
-void PlayerUpdate(Player *player)
-{
-    Sprite *sprite = &player->sprite;
-    Vec2 *velocity = &player->velocity;
-
-    // Gravity
-    if (!player->grounded)
-        velocity->y += gravity;
-
-    // Flip the sprite
-    if (player->velocity.x < 0)
-    {
-        sprite->flipX = true;
-    }
-    else if (player->velocity.x > 0)
-    {
-        sprite->flipX = false;
-    }
-
-    // Update position
-    sprite->pos.x += player->velocity.x;
-    sprite->pos.y += player->velocity.y;
-
-    // TODO(SeedyROM: Clamp position to screen, REMOVE ME
-    if (sprite->pos.x < 0)
-    {
-        sprite->pos.x = 0;
-        player->velocity.x = 0;
-    }
-    if (sprite->pos.x > windowWidth - sprite->frames.ptr[sprite->currentFrame].w)
-    {
-        sprite->pos.x = windowWidth - sprite->frames.ptr[sprite->currentFrame].w;
-        player->velocity.x = 0;
-    }
-
-    // Clamp position to screen y
-    if (sprite->pos.y < 0)
-    {
-        sprite->pos.y = 0;
-        player->velocity.y = 0;
-    }
-    if (sprite->pos.y > windowHeight - sprite->frames.ptr[sprite->currentFrame].h)
-    {
-        sprite->pos.y = windowHeight - sprite->frames.ptr[sprite->currentFrame].h;
-    }
-}
-
-void PlayerDraw(Player *player, SDL_Renderer *renderer)
-{
-    SpriteDraw(&player->sprite, renderer);
-}
+    Vec2 position;
+    Vec2 scale;
+    float rotation;
+} Camera;
 
 bool IsCollision(Sprite *a, Sprite *b)
 {
@@ -281,80 +41,18 @@ bool IsCollision(Sprite *a, Sprite *b)
     return true;
 }
 
-typedef struct Coin
+typedef struct Game
 {
-    TextureAtlas *atlas;
-    bool collected;
-    Sprite sprite;
-    usize time;
-    usize collectedTime;
-    u16 frameDuration;
-    u16 currentFrame;
-    bool delete;
-} Coin;
+    SDL_Window *window;
+    SDL_Renderer *renderer;
+    u16 windowWidth;
+    u16 windowHeight;
+    SDL_GameController *controller;
+    Camera camera;
+} Game;
 
-void CoinInit(Coin *coin, TextureAtlas *atlas)
+int GameInit(Game *game)
 {
-    coin->collected = false;
-    coin->atlas = atlas;
-    coin->time = 0;
-    coin->collectedTime = 0;
-    coin->frameDuration = 10;
-    coin->currentFrame = 0;
-    coin->delete = false;
-
-    SpriteFromAtlas(&coin->sprite, atlas, &STR("coin"));
-}
-
-void CoinCollect(Coin *coin)
-{
-    coin->collected = true;
-
-    Vec2 pos = coin->sprite.pos;
-    SpriteFromAtlas(&coin->sprite, coin->atlas, &STR("coin_collected"));
-    coin->sprite.pos = pos;
-    coin->currentFrame = 0;
-
-    coin->frameDuration = 5;
-    coin->time = 5;
-}
-
-void CoinDraw(Coin *coin, SDL_Renderer *renderer)
-{
-    SpriteDrawFrame(&coin->sprite, renderer, coin->currentFrame);
-}
-
-void CoinUpdate(Coin *coin)
-{
-    if (coin->collected)
-    {
-        coin->collectedTime += 1;
-        if (coin->collectedTime > 30)
-        {
-            coin->delete = true;
-        }
-    }
-    if (coin->time % coin->frameDuration == 0)
-    {
-        coin->currentFrame = (coin->currentFrame + 1) % coin->sprite.frames.len;
-    }
-    coin->time += 1;
-}
-
-typedef struct Wall
-{
-    Vec2 position;
-} Wall;
-
-void WallInit(Wall *wall, Vec2 position)
-{
-    wall->position = position;
-}
-
-int main(void)
-{
-    Arena *arena = ArenaAlloc(128 * Megabyte);
-
     // Initialize SDL
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER) != 0)
     {
@@ -374,6 +72,7 @@ int main(void)
     }
 
     // Create a renderer
+    SDL_SetHint(SDL_HINT_RENDER_BATCHING, "1");
     SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     if (renderer == NULL)
     {
@@ -390,18 +89,28 @@ int main(void)
     SDL_GetWindowSize(window, &windowRealWidth, &windowRealHeight);
 
     // Get the scaled window size
-    windowWidth = windowRealWidth / windowScaleFactor;
-    windowHeight = windowRealHeight / windowScaleFactor;
+    game->windowWidth = windowRealWidth / windowScaleFactor;
+    game->windowHeight = windowRealHeight / windowScaleFactor;
 
     // Set the logical size of the renderer
-    SDL_RenderSetLogicalSize(renderer, windowWidth, windowHeight);
+    SDL_RenderSetLogicalSize(renderer, game->windowWidth, game->windowHeight);
 
-    // Setup the joystick
-    SDL_GameController *controller = NULL;
+    game->window = window;
+    game->renderer = renderer;
+    game->controller = NULL;
+
+    return 0;
+}
+
+int GameLoadDefaultController(Game *game)
+{
+    SDL_GameController *controller = game->controller;
+
     // Load the joystick mapping
     if (SDL_GameControllerAddMappingsFromFile("../assets/gamecontrollerdb.txt") == -1)
     {
         fprintf(stderr, "SDL_GameControllerAddMappingsFromFile Error: %s\n", SDL_GetError());
+        return 1;
     }
     // Print how many joysticks are connected
     printf("Number of joysticks connected: %d\n", SDL_NumJoysticks());
@@ -411,6 +120,7 @@ int main(void)
         if (controller == NULL)
         {
             fprintf(stderr, "SDL_JoystickOpen Error: %s\n", SDL_GetError());
+            return 1;
         }
     }
 
@@ -418,27 +128,80 @@ int main(void)
     {
         // Print the joystick name
         printf("Controller name: %s\n", SDL_GameControllerName(controller));
+        return 1;
     }
 
-    // Load the texture atlas
-    TextureAtlas *textureAtlas = TextureAtlasCreate(arena);
+    return 0;
+}
+
+void GameShutdown(Game *game)
+{
+    // Close the controller
+    if (game->controller != NULL)
+    {
+        SDL_GameControllerClose(game->controller);
+    }
+
+    // Shutdown SDL
+    SDL_DestroyRenderer(game->renderer);
+    SDL_DestroyWindow(game->window);
+    SDL_Quit();
+}
+
+int main(void)
+{
+    Arena *globalArena = ArenaAlloc(128 * Megabyte);
+
+    // Initialize the game
+    Game game;
+    if (GameInit(&game) != 0)
+    {
+        printf("Failed to initialize capy-quest\n");
+        return 1;
+    }
+
+    // Load the default controller
+    if (GameLoadDefaultController(&game) != 0)
+    {
+        printf("Failed to load default controller\n");
+        printf("Will use keyboard controls instead\n");
+    }
+
+    // Get the window, renderer and controller.
+    SDL_Renderer *renderer = game.renderer;
+    SDL_GameController *controller = game.controller;
+
+    // Load the texture atlas from the assets folder
+    TextureAtlas *textureAtlas = TextureAtlasCreate(globalArena);
     TextureAtlasLoadSprites(renderer, textureAtlas, &STR("../assets/sprites/*.aseprite"));
 
-    Player player;
-    PlayerInit(&player, textureAtlas, &STR("capy_idle"));
+    // Create the camera and set the position
+    Camera camera;
+    camera.position = (Vec2){0, 0};
+    camera.scale = (Vec2){1, 1};
+    camera.rotation = 0;
+
+    // Get the capy sprite
+    Sprite capySprite;
+    SpriteFromAtlas(&capySprite, textureAtlas, &STR("capy_idle"));
 
     // Setup the player
+    Player player;
+    PlayerInit(&player, &capySprite);
+
+    // Setup the player control
     Controllable playerControl;
     ControllableInit(&playerControl, &player.sprite.pos, &player.velocity, &player.grounded, &PlayerControl);
 
     // Coin entity list
     EntityList coinList;
-    EntityListInit(arena, &coinList, sizeof(Coin), 32);
+    EntityListInit(globalArena, &coinList, sizeof(Coin), 32);
 
     // Get the wall sprite
     Sprite wallSprite;
     SpriteFromAtlas(&wallSprite, textureAtlas, &STR("rock"));
 
+    // Create a simple map!
     int map[32][16] = {
         {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
         {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 1},
@@ -452,6 +215,7 @@ int main(void)
         {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
     };
 
+    // Create the walls
     Wall walls[128];
     int wallCount = 0;
 
@@ -490,6 +254,7 @@ int main(void)
         }
     }
 
+    // Store the last player rect
     SDL_Rect lastPlayerRect = {0, 0, 0, 0};
 
     // Dumb timer
@@ -533,11 +298,11 @@ int main(void)
 
         // Update the player
         ControllableUpdate(&playerControl, controller);
-        PlayerUpdate(&player);
+        PlayerUpdate(&player, gravity);
 
         SDL_Rect playerRect = player.sprite.frames.ptr[player.sprite.currentFrame];
-        playerRect.x = (int)player.sprite.pos.x;
-        playerRect.y = (int)player.sprite.pos.y;
+        playerRect.x = player.sprite.pos.x;
+        playerRect.y = player.sprite.pos.y;
 
         // Resolve collisions with walls
         for (int i = 0; i < wallCount; i++)
@@ -664,6 +429,7 @@ int main(void)
         // 60 FPS
         SDL_Delay(16);
 
+        // Time keeps on slipping, slipping, slipping...
         time++;
     }
 
@@ -673,19 +439,11 @@ int main(void)
     // Free the texture atlas
     TextureAtlasFree(textureAtlas);
 
-    // Close the controller
-    if (controller != NULL)
-    {
-        SDL_GameControllerClose(controller);
-    }
-
-    // Shutdown SDL
-    SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(window);
-    SDL_Quit();
+    // Shutdown the game
+    GameShutdown(&game);
 
     // Clean up memory
-    ArenaFree(arena);
+    ArenaFree(globalArena);
 
     return 0;
 }
