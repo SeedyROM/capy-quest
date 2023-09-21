@@ -24,4 +24,4 @@ include_directories(external/)
 
 # Main executable
 add_executable(${PROJECT_NAME} ${SOURCES})
-target_link_libraries(${PROJECT_NAME} SDL2::SDL2 m)
+target_link_libraries(${PROJECT_NAME} PRIVATE SDL2::SDL2-static m)
