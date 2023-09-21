@@ -4,7 +4,7 @@
 
 ## Docs
 
-Go read the [docs](https://capy-quest.readthedocs.io/en/latest/)!
+Go read the [docs](./docs/README.md)!
 
 ## Supported platforms
 
