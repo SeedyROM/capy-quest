@@ -9,7 +9,7 @@
 typedef struct Camera {
     Vec2 position;
     Vec2 scale;
-    float rotation;
+    f32 rotation;
 } Camera;
 
 typedef struct Game {

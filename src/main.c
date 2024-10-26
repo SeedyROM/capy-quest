@@ -6,7 +6,7 @@
 #include "game.h"
 #include "std.h"
 
-static f32 gravity = 0.05f;
+static f32 gravity = 0.098f / 1.4f;
 
 bool IsCollision(Sprite *a, Sprite *b) {
     SDL_Rect aRect = a->frames.ptr[a->currentFrame];
@@ -27,6 +27,102 @@ bool IsCollision(Sprite *a, Sprite *b) {
     }
 
     return true;
+}
+
+// Add this function to check if there's ground below the player
+bool CheckGrounded(SDL_Rect playerRect, Wall walls[], int wallCount, Sprite wallSprite) {
+    // Create a small ray below the player to check for ground
+    SDL_Rect groundCheck = playerRect;
+    groundCheck.y = playerRect.y + playerRect.h;  // Position just below the player
+    groundCheck.h = 2;                            // Small height for ground detection
+
+    for (int i = 0; i < wallCount; i++) {
+        SDL_Rect wallRect = wallSprite.frames.ptr[wallSprite.currentFrame];
+        wallRect.x = walls[i].position.x;
+        wallRect.y = walls[i].position.y;
+
+        SDL_Rect overlap;
+        if (SDL_IntersectRect(&groundCheck, &wallRect, &overlap)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+// Add this function to handle all collision checks and responses
+void HandleCollisions(Player *player, Wall walls[], int wallCount, Sprite wallSprite,
+                      EntityList *coinList, SDL_Rect *lastPlayerRect) {
+    SDL_Rect playerRect = player->sprite.frames.ptr[player->sprite.currentFrame];
+    playerRect.x = player->sprite.pos.x;
+    playerRect.y = player->sprite.pos.y;
+
+    // First handle wall collisions
+    for (int i = 0; i < wallCount; i++) {
+        Wall wall = walls[i];
+        SDL_Rect wallRect = wallSprite.frames.ptr[wallSprite.currentFrame];
+        wallRect.x = wall.position.x;
+        wallRect.y = wall.position.y;
+
+        SDL_Rect overlap = {0, 0, 0, 0};
+
+        if (!SDL_IntersectRect(&playerRect, &wallRect, &overlap)) {
+            continue;
+        }
+
+        // Handle vertical collisions
+        if (lastPlayerRect->y + lastPlayerRect->h <= wallRect.y) {
+            player->sprite.pos.y = wallRect.y - playerRect.h;
+            player->velocity.y = 0;
+        } else if (lastPlayerRect->y >= wallRect.y + wallRect.h) {
+            player->sprite.pos.y = wallRect.y + wallRect.h;
+            player->velocity.y = 0;
+        }
+
+        // Update player rect after vertical resolution
+        playerRect.x = player->sprite.pos.x;
+        playerRect.y = player->sprite.pos.y;
+
+        // Handle horizontal collisions
+        if (SDL_IntersectRect(&playerRect, &wallRect, &overlap)) {
+            if (lastPlayerRect->x + lastPlayerRect->w <= wallRect.x) {
+                player->sprite.pos.x = wallRect.x - playerRect.w;
+                player->velocity.x = 0;
+            } else if (lastPlayerRect->x >= wallRect.x + wallRect.w) {
+                player->sprite.pos.x = wallRect.x + wallRect.w + 0.5f;
+                player->velocity.x = 0;
+            }
+        }
+    }
+
+    // Update player rect one final time
+    playerRect.x = player->sprite.pos.x;
+    playerRect.y = player->sprite.pos.y;
+
+    // Check grounded state after all collisions are resolved
+    player->grounded = CheckGrounded(playerRect, walls, wallCount, wallSprite);
+
+    // Handle coin collisions and collection
+    for (int i = coinList->count - 1; i >= 0; i--) {
+        Coin *coin = EntityListGetEntity(coinList, i + 1);
+
+        // Update the coin first
+        CoinUpdate(coin);
+
+        // Remove collected coins
+        if (coin->delete) {
+            EntityListRemoveAtIndex(coinList, i);
+            continue;
+        }
+
+        // Check for collision with player and collect if touching
+        if (IsCollision(&player->sprite, &coin->sprite)) {
+            CoinCollect(coin);
+        }
+    }
+
+    // Update the last player rect
+    *lastPlayerRect = playerRect;
 }
 
 int main(void) {
@@ -171,91 +267,7 @@ int main(void) {
         PlayerUpdate(&player, gravity);
 
         // Handle collisions
-        SDL_Rect playerRect = player.sprite.frames.ptr[player.sprite.currentFrame];
-        playerRect.x = player.sprite.pos.x;
-        playerRect.y = player.sprite.pos.y;
-
-        // Resolve collisions with walls
-        for (int i = 0; i < wallCount; i++) {
-            Wall wall = walls[i];
-
-            SDL_Rect wallRect = wallSprite.frames.ptr[wallSprite.currentFrame];
-            wallRect.x = wall.position.x;
-            wallRect.y = wall.position.y;
-
-            SDL_Rect overlap = {0, 0, 0, 0};
-
-            if (!SDL_IntersectRect(&playerRect, &wallRect, &overlap)) {
-                player.grounded = false;
-                continue;
-            }
-
-            // If the sprite was previous above the platform
-            if (lastPlayerRect.y + lastPlayerRect.h <= wallRect.y) {
-                // If the sprite is now inside the platform
-                if (playerRect.y + playerRect.h > wallRect.y) {
-                    // Move the sprite up
-                    player.sprite.pos.y = wallRect.y - playerRect.h;
-                    player.velocity.y = 0;
-                    player.grounded = true;
-                }
-            }
-
-            if (lastPlayerRect.y >= wallRect.y + wallRect.h) {
-                // If the sprite is now inside the platform
-                if (playerRect.y < wallRect.y + wallRect.h) {
-                    // Move the sprite down
-                    player.sprite.pos.y = wallRect.y + wallRect.h;
-                    player.velocity.y = 0;
-                }
-            }
-
-            // Update the player rect
-            playerRect.x = player.sprite.pos.x;
-            playerRect.y = player.sprite.pos.y;
-
-            // If we're still colliding, try to resolve the X axis
-            if (!SDL_IntersectRect(&playerRect, &wallRect, &overlap)) {
-                continue;
-            }
-
-            // If the sprite was previous to the left of the platform
-            if (lastPlayerRect.x + lastPlayerRect.w <= wallRect.x) {
-                // If the sprite is now inside the platform
-                if (playerRect.x + playerRect.w > wallRect.x) {
-                    // Move the sprite left
-                    player.sprite.pos.x = wallRect.x - playerRect.w;
-                    player.velocity.x = 0;
-                }
-            }
-
-            if (lastPlayerRect.x >= wallRect.x + wallRect.w) {
-                // WTF IS THIS 0.5??? Is it the float to integer casting?
-                // If the sprite is now inside the platform
-                if (playerRect.x <= wallRect.x + wallRect.w + 0.5) {
-                    // Move the sprite right
-                    player.sprite.pos.x = wallRect.x + wallRect.w + 0.5;
-                    player.velocity.x = 0;
-                }
-            }
-        }
-
-        // Handle coin collisions
-        for (int i = 0; i < coinList.count; i++) {
-            Coin *coin = EntityListGetEntity(&coinList, i + 1);
-            CoinUpdate(coin);
-
-            if (coin->delete) {
-                EntityListRemoveAtIndex(&coinList, i);
-                continue;
-            }
-
-            if (IsCollision(&player.sprite, &coin->sprite)) {
-                CoinCollect(coin);
-            }
-        }
-
-        lastPlayerRect = playerRect;
+        HandleCollisions(&player, walls, wallCount, wallSprite, &coinList, &lastPlayerRect);
 
         // Clear the screen
         SDL_SetRenderDrawColor(renderer, 0, 128, 200, 255);

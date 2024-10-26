@@ -15,7 +15,7 @@ void PlayerControl(Controllable *controllable, SDL_GameController *controller) {
     // Move with arrow keys
     const Uint8 *state = SDL_GetKeyboardState(NULL);
 
-    // TODO(SeedyROM): Dedup player control logic for keyboard and joystick
+    // TODO(SeedyROM): De-dup player control logic for keyboard and joystick
     // Move with joystick
     if (controller != NULL) {
         // Update the game controller
@@ -80,13 +80,13 @@ void PlayerControl(Controllable *controllable, SDL_GameController *controller) {
     } else {
         if (state[SDL_SCANCODE_LEFT]) {
             if (velocity->x > -maxSpeed)
-                velocity->x -= 0.05f;
+                velocity->x -= *controllable->grounded ? 0.05f : 0.02f;
             else if (velocity->x < -maxSpeed)
                 velocity->x = -maxSpeed;
         }
         if (state[SDL_SCANCODE_RIGHT]) {
             if (velocity->x < maxSpeed)
-                velocity->x += 0.05f;
+                velocity->x += *controllable->grounded ? 0.05f : 0.02f;
             else if (velocity->x > maxSpeed)
                 velocity->x = maxSpeed;
         }
@@ -94,19 +94,19 @@ void PlayerControl(Controllable *controllable, SDL_GameController *controller) {
         // If left and right are not pressed, slow down
         if (!state[SDL_SCANCODE_LEFT] && !state[SDL_SCANCODE_RIGHT]) {
             if (velocity->x > 0) {
-                velocity->x -= 0.09f;
+                velocity->x -= 0.15f;
                 if (velocity->x < 0)
                     velocity->x = 0;
             } else if (velocity->x < 0) {
-                velocity->x += 0.09f;
+                velocity->x += 0.15f;
                 if (velocity->x > 0)
                     velocity->x = 0;
             }
         }
 
         // Jump
-        if (state[SDL_SCANCODE_UP]) {
-            velocity->y = -1.4;
+        if (state[SDL_SCANCODE_UP] && *controllable->grounded) {
+            velocity->y = -2.6;
         }
     }
 }
