@@ -1,11 +1,11 @@
-#include "std/gfx.h"
+#include "engine/gfx.h"
 
 #include <glob.h>
 
 #define STB_RECT_PACK_IMPLEMENTATION
 #include <stb_rectpack.h>
 
-#include "std/aseprite.h"
+#include "engine/aseprite.h"
 
 TextureAtlas *TextureAtlasCreate(Arena *arena) {
     TextureAtlas *atlas = ArenaPushStruct(arena, TextureAtlas);

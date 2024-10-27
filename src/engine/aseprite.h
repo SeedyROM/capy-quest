@@ -1,9 +1,9 @@
 #pragma once
 
-#include "std/arena.h"
-#include "std/fs.h"
-#include "std/str.h"
-#include "std/util.h"
+#include "engine/arena.h"
+#include "engine/fs.h"
+#include "engine/str.h"
+#include "engine/util.h"
 
 static const u32 AsepriteFileMagic = 0xA5E0;
 static const u32 AsepriteFrameMagic = 0xF1FA;
@@ -24,14 +24,14 @@ typedef enum AsepriteCelType {
     AsepriteCelType_RawCel = 0,
     AsepriteCelType_LinkedCel = 1,
     AsepriteCelType_CompressedImage = 2,
-    AespriteCelType_CompressedTileMap = 3,
+    AsepriteCelType_CompressedTileMap = 3,
 } AsepriteCelType;
 
-typedef struct AespriteCelCompressedImage {
+typedef struct AsepriteCelCompressedImage {
     u16 width;
     u16 height;
     u32 *pixels;
-} AespriteCelCompressedImage;
+} AsepriteCelCompressedImage;
 
 typedef struct AsepriteFrameCelChunk {
     u16 layerIndex;
@@ -43,7 +43,7 @@ typedef struct AsepriteFrameCelChunk {
     u32 *pixels;
 
     union {
-        AespriteCelCompressedImage compressedImage;
+        AsepriteCelCompressedImage compressedImage;
     } cel;
 } AsepriteFrameCelChunk;
 

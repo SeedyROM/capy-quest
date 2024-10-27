@@ -3,8 +3,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "engine/engine.h"
 #include "game.h"
-#include "std.h"
 
 static f32 gravity = 0.098f / 1.4f;
 

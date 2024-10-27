@@ -2,9 +2,9 @@
 
 #include <SDL2/SDL.h>
 
+#include "engine/engine.h"
 #include "game/behaviours.h"
 #include "game/entities.h"
-#include "std.h"
 
 typedef struct Camera {
     Vec2 position;

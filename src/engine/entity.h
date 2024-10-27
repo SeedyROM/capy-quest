@@ -4,25 +4,26 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "std/arena.h"
-#include "std/util.h"
+#include "engine/arena.h"
+#include "engine/util.h"
 
 typedef struct EntityRef {
-    u16 id;
-    void *entity;
-    struct EntityRef *next;
+  u16 id;
+  void *entity;
+  struct EntityRef *next;
 } EntityRef;
 
 typedef struct EntityList {
-    u16 count;
-    u16 capacity;
-    EntityRef *refs;
-    usize entitySize;
-    void *entities;
-    void *lastEntity;
+  u16 count;
+  u16 capacity;
+  EntityRef *refs;
+  usize entitySize;
+  void *entities;
+  void *lastEntity;
 } EntityList;
 
-void EntityListInit(Arena *arena, EntityList *list, usize entitySize, u16 capacity);
+void EntityListInit(Arena *arena, EntityList *list, usize entitySize,
+                    u16 capacity);
 EntityRef *EntityListAdd(EntityList *list, void *entity);
 void EntityListRemove(EntityList *list, EntityRef *ref);
 void EntityListRemoveAtIndex(EntityList *list, u16 index);

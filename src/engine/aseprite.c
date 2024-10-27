@@ -1,4 +1,4 @@
-#include "std/aseprite.h"
+#include "engine/aseprite.h"
 
 #include <assert.h>
 #include <errno.h>
@@ -193,7 +193,7 @@ AsepriteFile *AsepriteLoad(Arena *arena, String *path) {
                             break;
 
                         case AsepriteCelType_CompressedImage: {
-                            AespriteCelCompressedImage *compressedImage = &celChunk->cel.compressedImage;
+                            AsepriteCelCompressedImage *compressedImage = &celChunk->cel.compressedImage;
 
                             AsepriteDebugPrint("\nProcessing CompressedImage\n");
 
@@ -258,7 +258,7 @@ AsepriteFile *AsepriteLoad(Arena *arena, String *path) {
                         };
                             break;
 
-                        case AespriteCelType_CompressedTileMap: {
+                        case AsepriteCelType_CompressedTileMap: {
                             printf("CompressedTileMap not supported!!!\n");
                             exit(1);
                         };

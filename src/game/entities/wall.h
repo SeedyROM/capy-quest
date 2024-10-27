@@ -1,9 +1,9 @@
 #pragma once
 
-#include "std/util.h"
+#include "engine/util.h"
 
 typedef struct Wall {
-    Vec2 position;
+  Vec2 position;
 } Wall;
 
 void WallInit(Wall *wall, Vec2 position);

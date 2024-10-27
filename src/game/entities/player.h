@@ -3,13 +3,13 @@
 #include <SDL2/SDL.h>
 #include <stdbool.h>
 
+#include "engine/gfx.h"
 #include "game/behaviours/controllable.h"
-#include "std/gfx.h"
 
 typedef struct Player {
-    Sprite sprite;
-    Vec2 velocity;
-    bool grounded;
+  Sprite sprite;
+  Vec2 velocity;
+  bool grounded;
 } Player;
 
 void PlayerInit(Player *player, Sprite *sprite);

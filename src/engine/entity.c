@@ -1,4 +1,4 @@
-#include "std/entity.h"
+#include "engine/entity.h"
 
 void EntityListInit(Arena *arena, EntityList *list, usize entitySize, u16 capacity) {
     list->count = 0;
@@ -18,7 +18,7 @@ EntityRef *EntityListAdd(EntityList *list, void *entity) {
     // Add the reference to the list
     EntityRef *ref = list->refs + list->count;
     ref->id = list->count + 1;
-    ref->entity = list->entities + (list->count * list->entitySize);
+    ref->entity = (char *)list->entities + (list->count * list->entitySize);
     ref->next = NULL;
 
     // Copy the entity into the list
